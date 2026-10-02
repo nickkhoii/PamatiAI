@@ -25,6 +25,7 @@ services:
     environment: &backend_env
       DATABASE_URL: mysql+pymysql://${MYSQL_USER:-pamati}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE:-pamati}?charset=utf8mb4
       ENVIRONMENT: development
+      ALLOW_RAW_MEDIA_STORAGE: ${ALLOW_RAW_MEDIA_STORAGE:-false}
       CORS_ORIGINS: '["http://localhost:3000"]'
       ALLOWED_HOSTS: '["localhost","127.0.0.1","backend"]'
     depends_on:

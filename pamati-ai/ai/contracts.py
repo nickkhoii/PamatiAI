@@ -7,7 +7,7 @@ from typing import Literal, Protocol
 class AnalysisInput:
     pseudonymous_job_id: str
     consent_receipt_id: str
-    modality: Literal["text", "speech", "visual"]
+    modality: Literal["text", "audio", "visual", "multimodal"]
     payload_reference: str
 
 

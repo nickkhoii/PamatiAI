@@ -4,7 +4,7 @@ Push-Location "$projectRoot/backend"
 try {
     & "$projectRoot/.venv/Scripts/python.exe" -m pytest
     if ($LASTEXITCODE -ne 0) { throw 'Backend tests failed' }
-    & "$projectRoot/.venv/Scripts/python.exe" -m ruff check app ../tests/backend
+    & "$projectRoot/.venv/Scripts/python.exe" -m ruff check app ../tests/backend ../database/migrations
     if ($LASTEXITCODE -ne 0) { throw 'Backend lint failed' }
     & "$projectRoot/.venv/Scripts/python.exe" -m alembic upgrade head --sql
     if ($LASTEXITCODE -ne 0) { throw 'Migration SQL generation failed' }

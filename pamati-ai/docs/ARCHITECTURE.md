@@ -4,7 +4,7 @@ PamatiAI: A Multimodal Conversational AI Framework for Student Mental Health and
 
 ## Scope and implementation status
 
-This foundation runs a Next.js application, a FastAPI REST service, and MySQL 8.4 with utf8mb4. Implemented: live service status, readiness checking, validated configuration, SQLAlchemy connection lifecycle, Alembic migration baseline, deny-by-default authorization policy, and automated foundation tests. Authentication, student records, conversations, inference, and notifications are planned. No student data is collected and no clinical claims are made by the foundation.
+This foundation runs a Next.js application, a FastAPI REST service, and MySQL 8.4 with utf8mb4. Implemented: live service status, readiness checking, validated configuration, SQLAlchemy connection lifecycle, 30 normalized database tables, explicit Alembic migrations, consent-aware persistence, database provenance/audit guards, development seed commands, deny-by-default authorization policy and automated database tests. Authentication, participant-facing data workflows, inference execution and notification dispatch remain planned. No student data is collected by exposed endpoints and no clinical claims are made by the foundation. See [DATABASE.md](DATABASE.md) for implemented persistence relationships and limitations.
 
 ## Components and boundaries
 
@@ -31,7 +31,7 @@ This foundation runs a Next.js application, a FastAPI REST service, and MySQL 8.
 
 Browser -> Next.js -> FastAPI -> SQLAlchemy -> MySQL. Future inference workers receive pseudonymous jobs only after consent and ownership validation, and recheck consent before publishing outputs. Transactional outbox records work and notifications alongside domain changes. Separate object storage is planned for ephemeral encrypted media; media must never enter application logs.
 
-Use opaque identifiers, UTC timestamps and foreign keys. Planned entities: users, role grants, reviewer assignments, consent receipts, conversations, messages, media references, analysis runs, observations, review cases, review decisions, notification outbox and audit events. Analysis runs retain adapter version, model revision, preprocessing revision, modality availability, consent receipt, uncertainty, and input lineage. Do not combine observations across changed model versions without documented validation.
+Use opaque identifiers, UTC timestamps and ownership-carrying composite foreign keys. These persistence entities are now implemented; queue workers and application endpoints remain planned. Analysis runs retain adapter version, model revision, preprocessing revision, modality availability, consent receipt, uncertainty and input lineage. Do not combine observations across changed model versions without documented validation.
 
 ## Authorization
 

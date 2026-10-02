@@ -6,9 +6,9 @@ Production-oriented research prototype foundation for higher-education student s
 
 ## What works now
 
-Next.js/React/TypeScript/Tailwind shell with real service status; FastAPI liveness and database readiness; validated MySQL utf8mb4 configuration; SQLAlchemy and Alembic baseline; tested least-privilege authorization policy; pluggable analysis contracts; Docker development services and dependency locks.
+Next.js/React/TypeScript/Tailwind shell with real service status; FastAPI liveness and database readiness; normalized MySQL utf8mb4 schema with 30 domain tables; SQLAlchemy models and explicit Alembic migrations; consent-aware persistence helpers and database guards; Argon2id development seeds; tested least-privilege authorization policy; pluggable analysis contracts; Docker development services and dependency locks.
 
-Student, reviewer and administrator features are documented but not implemented. No login, conversation submission, consent storage, inference, alerts or student data are available. Do not onboard real participants until these features and institutional governance have been reviewed.
+Student, reviewer and administrator API/UI workflows remain planned. Database persistence is implemented, but no login, conversation submission, consent UI, model execution or notification dispatch endpoint is exposed. Do not onboard real participants until those workflows and institutional governance have been reviewed.
 
 ## Docker development
 
@@ -55,6 +55,7 @@ cd pamati-ai/backend
 ../.venv/Scripts/python.exe -m pytest
 ../.venv/Scripts/python.exe -m ruff check app ../tests/backend
 ../.venv/Scripts/python.exe -m alembic upgrade head
+../.venv/Scripts/python.exe -m app.database_commands seed
 cd ../frontend
 npm.cmd test
 npm.cmd run typecheck
@@ -63,4 +64,4 @@ npm.cmd run build
 
 The Python lock includes development tooling for this research foundation. Update it deliberately using `uv pip compile backend/pyproject.toml --extra dev --python-version 3.12 -o backend/requirements.lock`. Commit frontend/package-lock.json after intentional dependency updates. Optional heavy ML dependencies are declared in backend/pyproject.toml but excluded from the base lock.
 
-Architecture and implementation boundaries: [ARCHITECTURE](docs/ARCHITECTURE.md), [SECURITY](docs/SECURITY.md), [AI_SAFETY](docs/AI_SAFETY.md). See docs/VALIDATION.md for checks run in the creation environment and remaining verification.
+Architecture and implementation boundaries: [ARCHITECTURE](docs/ARCHITECTURE.md), [DATABASE](docs/DATABASE.md), [SECURITY](docs/SECURITY.md), [AI_SAFETY](docs/AI_SAFETY.md). DATABASE includes initialization, explicit development-account seeds and real-MySQL tests. See docs/VALIDATION.md for checks run in the creation environment and remaining verification.
