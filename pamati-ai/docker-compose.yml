@@ -1,0 +1,76 @@
+name: pamati-ai
+services:
+  db:
+    image: mysql:8.4
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-pamati}
+      MYSQL_USER: ${MYSQL_USER:-pamati}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysql --protocol=TCP -h 127.0.0.1 -u\"$$MYSQL_USER\" \"$$MYSQL_DATABASE\" -e 'SELECT 1' >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    networks: [data]
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    command: ["alembic", "upgrade", "head"]
+    environment: &backend_env
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-pamati}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE:-pamati}?charset=utf8mb4
+      ENVIRONMENT: development
+      CORS_ORIGINS: '["http://localhost:3000"]'
+      ALLOWED_HOSTS: '["localhost","127.0.0.1","backend"]'
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [data]
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    environment: *backend_env
+    ports: ["127.0.0.1:8000:8000"]
+    volumes:
+      - ./backend/app:/workspace/backend/app:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/ready', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [web, data]
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    environment:
+      API_INTERNAL_URL: http://backend:8000
+      NEXT_TELEMETRY_DISABLED: '1'
+    ports: ["127.0.0.1:3000:3000"]
+    volumes:
+      - ./frontend/src:/app/src:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks: [web]
+volumes:
+  mysql_data:
+networks:
+  web:
+  data:
+    internal: true
