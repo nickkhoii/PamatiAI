@@ -14,7 +14,7 @@ const actions: Record<string, string> = {
 const studentActions: Record<string, string> = {
   consent: "consent", "consent-history": "consent/history", "withdraw-consent": "consent",
   privacy: "privacy", records: "records", conversations: "conversations", trends: "trends",
-  "data-controls": "data-controls", conversation: "conversations", "support-request": "support-requests"
+  "data-controls": "data-controls", conversation: "conversations", "chat-turn": "conversations", "new-conversation": "conversations", "hide-conversation": "conversations", "support-request": "support-requests"
 };
 async function studentPath(action: string, request: NextRequest, token: string | undefined) {
   if (!token || !studentActions[action]) return null;
@@ -23,10 +23,11 @@ async function studentPath(action: string, request: NextRequest, token: string |
   const user = await profile.json();
   if (typeof user.id !== "string" || !/^[0-9a-f-]{36}$/i.test(user.id)) return null;
   let path = `students/${user.id}/${studentActions[action]}`;
-  if (action === "conversation") {
+  if (["conversation", "chat-turn", "hide-conversation"].includes(action)) {
     const id = request.nextUrl.searchParams.get("id") ?? "";
     if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-    return `conversations/${id}`;
+    const offset = Math.max(0, Math.min(100000, Number(request.nextUrl.searchParams.get("offset") ?? 0) || 0));
+    return `conversations/${id}${action === "chat-turn" ? "/messages" : action === "conversation" ? `?offset=${Math.floor(offset)}` : ""}`;
   }
   if (action === "records") {
     const category = request.nextUrl.searchParams.get("category") ?? "conversations";
@@ -49,11 +50,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ac
   let path = actions[action];
   if (!path && !studentActions[action]) return NextResponse.json({ detail: "Not found" }, { status: 404 });
   if (["privacy", "records", "conversations", "trends", "consent-history", "onboarding", "conversation"].includes(action)) return NextResponse.json({ detail: "Method not allowed" }, { status: 405 });
-  if (Number(request.headers.get("content-length") ?? 0) > 8192) return NextResponse.json({ detail: "Request too large" }, { status: 413 });
+  if (Number(request.headers.get("content-length") ?? 0) > 32768) return NextResponse.json({ detail: "Request too large" }, { status: 413 });
   let body;
   try {
     const raw = await request.text();
-    if (raw.length > 8192) return NextResponse.json({ detail: "Request too large" }, { status: 413 });
+    if (new TextEncoder().encode(raw).length > 32768) return NextResponse.json({ detail: "Request too large" }, { status: 413 });
     body = raw ? JSON.parse(raw) : {};
   } catch { return NextResponse.json({ detail: "Invalid request" }, { status: 400 }); }
   if (action === "refresh" || action === "logout") body = { token: request.cookies.get(refreshCookie)?.value ?? "" };
@@ -68,9 +69,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ac
       path = derived;
     }
     const upstream = await fetch(`${origin()}/api/v1/${path}`, {
-      method: action === "profile" ? "PATCH" : action === "consent" ? "PUT" : action === "withdraw-consent" ? "DELETE" : "POST", cache: "no-store",
+      method: action === "profile" ? "PATCH" : action === "consent" ? "PUT" : ["withdraw-consent", "hide-conversation"].includes(action) ? "DELETE" : "POST", cache: "no-store",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: action === "withdraw-consent" ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(15000)
+      body: ["withdraw-consent", "hide-conversation"].includes(action) ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(30000)
     });
     const payload = upstream.status === 204 ? {} : await upstream.json();
     const issued = upstream.ok && (action === "login" || action === "refresh");

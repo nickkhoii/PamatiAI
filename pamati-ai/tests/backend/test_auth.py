@@ -13,6 +13,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.auth_dependencies import digest, hasher
 from app.config import Settings
+from app.consent_policy import POLICY_VERSION
 from app.database_commands import seed
 from app.db import Base, get_session
 from app.main import app
@@ -399,7 +400,7 @@ def test_profile_admin_permissions_and_student_own_resources(api):
         client.put(
             base + "/consent",
             headers=alice,
-            json={"policy_version": "2026-10-03.1", "acknowledged": True, "retention_version": 1},
+            json={"policy_version": POLICY_VERSION, "acknowledged": True, "retention_version": 1},
         ).status_code
         == 200
     )

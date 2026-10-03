@@ -17,6 +17,8 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
       response.end(JSON.stringify({ access_token: "test-access-secret", refresh_token: "test-refresh-secret", expires_in: 900 }));
     } else if (request.url === "/api/v1/me") {
       response.end(JSON.stringify({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", email: "test@example.com", display_name: "Test", roles: ["STUDENT"] }));
+    } else if (request.url.startsWith("/api/v1/conversations/") && request.method !== "DELETE") {
+      response.end(JSON.stringify({ messages: [], next_offset: null }));
     } else if (request.url.startsWith("/api/v1/students/") && request.method !== "DELETE") {
       response.end(JSON.stringify({ records: [], next_offset: null }));
     } else { response.writeHead(204); response.end(); }
@@ -62,6 +64,34 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
     assert.equal(calls.at(-1).method, "PUT");
     assert.equal(calls.at(-1).path, "/api/v1/students/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/consent");
     assert.equal(calls.at(-1).body.audio_processing, false);
+    const chatPage = await fetch(origin + "/student/chat");
+    const chatHTML = await chatPage.text();
+    assert.equal(chatPage.status, 200);
+    assert.match(chatHTML, /Your reflection space/);
+    assert.match(chatHTML, /aria-label="Conversation history"/);
+    assert.match(chatHTML, /id="chat-message"/);
+    const studentHeaders = { Origin: origin, Cookie: cookieHeader, "Content-Type": "application/json" };
+    const created = await fetch(origin + "/api/auth/new-conversation?student_id=bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", { method: "POST", headers: studentHeaders, body: "{}" });
+    assert.equal(created.status, 200);
+    assert.equal(calls.at(-1).path, "/api/v1/students/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/conversations");
+    assert.equal(calls.at(-1).method, "POST");
+    const conversationId = "cccccccc-cccc-cccc-cccc-cccccccccccc";
+    const turnBody = { request_id: "dddddddd-dddd-dddd-dddd-dddddddddddd", text: "Study stress" };
+    const turn = await fetch(origin + `/api/auth/chat-turn?id=${conversationId}`, { method: "POST", headers: studentHeaders, body: JSON.stringify(turnBody) });
+    assert.equal(turn.status, 200);
+    assert.equal(calls.at(-1).path, `/api/v1/conversations/${conversationId}/messages`);
+    assert.deepEqual(calls.at(-1).body, turnBody);
+    assert.equal(calls.at(-1).authorization, "Bearer test-access-secret");
+    const beforeForgedTurn = calls.length;
+    const forgedTurn = await fetch(origin + `/api/auth/chat-turn?id=${conversationId}`, { method: "POST", headers: { ...studentHeaders, Origin: "https://attacker.example" }, body: JSON.stringify(turnBody) });
+    assert.equal(forgedTurn.status, 403);
+    assert.equal(calls.length, beforeForgedTurn);
+    const conversation = await fetch(origin + `/api/auth/conversation?id=${conversationId}&offset=100`, { headers: { Cookie: cookieHeader } });
+    assert.equal(conversation.status, 200);
+    assert.equal(calls.at(-1).path, `/api/v1/conversations/${conversationId}?offset=100`);
+    const hidden = await fetch(origin + `/api/auth/hide-conversation?id=${conversationId}`, { method: "POST", headers: studentHeaders, body: "{}" });
+    assert.equal(hidden.status, 200);
+    assert.equal(calls.at(-1).method, "DELETE");
     const withdrawn = await fetch(origin + "/api/auth/withdraw-consent", { method: "POST", headers: { Origin: origin, Cookie: cookieHeader, "Content-Type": "application/json" }, body: "{}" });
     assert.equal(withdrawn.status, 200);
     assert.equal(calls.at(-1).method, "DELETE");

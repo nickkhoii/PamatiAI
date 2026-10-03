@@ -56,7 +56,7 @@ Example text-only choice (read the actual versions from `/me/onboarding`):
 
 ```json
 {
-  "policy_version": "2026-10-03.1",
+  "policy_version": "2026-10-03.2",
   "retention_version": 1,
   "expected_version": 0,
   "acknowledged": true,

@@ -4,7 +4,7 @@ PamatiAI is a student-support research prototype. AI outputs are uncertain estim
 
 ## Choices and access
 
-Text, audio, visual, longitudinal tracking and research permission are separate. Assigned-counselor access is an additional separate choice. New optional choices are unchecked. The student can acknowledge the information and decline every analysis choice, with the same access to privacy controls and support requests. Audio/visual consent does not activate device capture or authorize raw recording retention. This release has no microphone/camera capture or real model inference integration; it records choices for future features and supplies a consent-enforcing adapter boundary.
+Text, audio, visual, longitudinal tracking and research permission are separate. Assigned-counselor access is an additional separate choice. New optional choices are unchecked. The student can acknowledge the information and decline every analysis choice, with the same access to privacy controls and support requests. Audio/visual consent does not activate device capture or authorize raw recording retention. This release has no microphone/camera capture. Conversational text uses the disclosed local baseline or explicitly configured model adapter; sentiment analysis remains a separate consent-enforcing adapter workflow.
 
 Text permission is needed to create a conversational AI session. Previously available personal records remain readable after withdrawal. STUDENT routes check ownership server-side; counselors cannot use the student privacy inventory/export-request routes. Counselor access to support records requires current assignment and reviewer-access consent. Administrators manage accounts, retention configuration and request metadata without receiving automatic content access.
 
@@ -26,9 +26,9 @@ The `data_retention` system setting is validated server-side and editable only b
 | Analysis records | 90 days from creation |
 | Research membership records | 365 days from creation |
 | Consent/audit evidence | 1,825 days from creation |
-| Explicitly permitted raw media | Maximum 24 hours; configuration bounded to 1–168 hours |
-| Backup expiry window | 90 days; configuration bounded to 1–365 days |
-| Privacy-request review target | 30 days; configuration bounded to 1–90 days |
+| Explicitly permitted raw media | Maximum 24 hours; configuration bounded to 1â€“168 hours |
+| Backup expiry window | 90 days; configuration bounded to 1â€“365 days |
+| Privacy-request review target | 30 days; configuration bounded to 1â€“90 days |
 
 The API versions configuration changes. Consent receipts preserve the policy displayed; new conversations preserve their retention policy. Linked analysis/research records derive their disclosed limits from their consent receipt. Calculated ordinary deadlines use the shorter of captured and current limits: changing configuration cannot silently extend a previously disclosed shorter period. Legacy records without snapshots use current policy and must be reviewed during institutional migration.
 
@@ -53,3 +53,7 @@ Turning off research permission or withdrawing marks linked research memberships
 Before participant onboarding, the institution must approve actual retention periods, provide an accessible privacy/DPO contact and emergency-support information, define review staffing and request handling, validate appropriate export and erasure workers, and document approved research purposes. No real model adapters, storage-purge worker or external dataset recall are claimed as deployed in this change. Protect deployment with HTTPS, restricted credentials, encryption, audit monitoring and the existing authentication controls.
 
 The design is informed by the Philippine National Privacy Commission's [Data Privacy Act implementing rules](https://privacy.gov.ph/implementing-rules-regulations-data-privacy-act-2012/) on transparency, legitimate purpose, proportionality and retention, and its [consent guidance compendium](https://privacy.gov.ph/wp-content/uploads/2024/05/2023-compendium-2.pdf) on accessible withdrawal. These references guide the design; institution-specific obligations still require an approved policy. Human-oversight and uncertainty disclosures follow the [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework).
+
+## Conversational processing
+
+Student chat uses text consent independently of audio, visual, longitudinal and research choices. The default provider runs predefined responses locally. A configured model endpoint receives only the system prompt and up to 20 recent text messages from that conversation. Provider/host/model/version are disclosed and saved in consent evidence; changing the processor requires renewed acknowledgment. Consent changes during generation discard the reply before publication but cannot retract processing already performed. Hiding history does not erase retained records. See [CONVERSATION.md](CONVERSATION.md).

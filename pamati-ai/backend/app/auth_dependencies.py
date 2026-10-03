@@ -65,7 +65,7 @@ def deny(db, actor, action, status=403, resource_id=None):
     )
 
 
-def throttle(db, request: Request, action: str, subject: str = ""):
+def throttle(db, request: Request, action: str, subject: str = "", *, ip_limit=30, subject_limit=8):
     # Persistent counters are shared by all workers. Do not trust forwarded IP headers.
     keys = [f"{action}:ip:{request.client.host if request.client else 'unknown'}"]
     if subject:
@@ -86,7 +86,7 @@ def throttle(db, request: Request, action: str, subject: str = ""):
         if row.window_start < utcnow() - timedelta(minutes=15):
             row.window_start, row.attempts = utcnow(), 0
         row.attempts += 1
-        limit = 30 if ":ip:" in raw else 8
+        limit = ip_limit if ":ip:" in raw else subject_limit
         if row.attempts > limit:
             audit(db, None, "auth.rate_limited", outcome="denied")
             db.commit()

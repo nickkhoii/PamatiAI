@@ -229,6 +229,8 @@ class Message(Entity, SoftDelete, Base):
     sender: Mapped[str] = mapped_column(choice("message_sender", "student", "assistant", "system"))
     sequence_number: Mapped[int] = mapped_column(Integer)
     text_content: Mapped[str | None] = mapped_column(Text)
+    request_id: Mapped[str | None] = mapped_column(String(36), unique=True)
+    generation: Mapped[dict | None] = mapped_column(JSON)
     session: Mapped[InteractionSession] = relationship(
         back_populates="messages", foreign_keys=[session_id]
     )

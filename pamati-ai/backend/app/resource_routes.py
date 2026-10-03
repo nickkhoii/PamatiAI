@@ -2,7 +2,7 @@
 
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import Field, StrictBool
 from sqlalchemy import func, select
 
@@ -129,12 +129,13 @@ def create_conversation(student_id: str, db: DB, user: CurrentUser):
 
 
 @router.get("/conversations/{conversation_id}")
-def conversation(conversation_id: str, db: DB, user: CurrentUser):
+def conversation(conversation_id: str, db: DB, user: CurrentUser,
+                 offset: int = Query(default=0, ge=0, le=100000), limit: int = Query(default=100, ge=1, le=500)):
     row = db.get(Conversation, conversation_id)
     if not row or row.deleted_at:
         raise HTTPException(404, "Conversation not found")
     authorize_student(db, user, "history:read", row.student_id)
-    messages = db.scalars(
+    messages = list(db.scalars(
         select(Message)
         .join(InteractionSession, Message.session_id == InteractionSession.id)
         .where(
@@ -143,13 +144,16 @@ def conversation(conversation_id: str, db: DB, user: CurrentUser):
             Message.student_id == row.student_id,
             Message.deleted_at.is_(None),
         )
-        .order_by(InteractionSession.created_at, Message.sequence_number)
-        .limit(500)
-    )
+        .order_by(InteractionSession.created_at.desc(), InteractionSession.id.desc(), Message.sequence_number.desc())
+        .offset(offset)
+        .limit(limit + 1)
+    ))
     result = {
         "id": row.id,
         "status": row.status,
-        "messages": [{"id": m.id, "sender": m.sender, "text": m.text_content} for m in messages],
+        "messages": [{"id": m.id, "sender": m.sender, "text": m.text_content,
+                      "created_at": m.created_at, "generation": m.generation} for m in reversed(messages[:limit])],
+        "next_offset": offset + limit if len(messages) > limit else None,
     }
     audit(db, user.id, "conversation.read", "conversation", row.id)
     db.commit()

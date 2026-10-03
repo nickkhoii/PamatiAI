@@ -10,6 +10,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.auth_routes import router as auth_router
 from app.config import get_settings
+from app.conversation_routes import router as conversation_router
 from app.db import engine
 from app.privacy_routes import router as privacy_router
 from app.resource_routes import router as resource_router
@@ -32,6 +33,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(resource_router)
 app.include_router(privacy_router)
+app.include_router(conversation_router)
 
 
 @app.middleware("http")

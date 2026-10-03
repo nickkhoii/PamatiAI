@@ -1,8 +1,10 @@
 """Versioned student disclosures. Changes to these words require a new policy version."""
 
 from copy import deepcopy
+from hashlib import sha256
+from urllib.parse import urlsplit
 
-POLICY_VERSION = "2026-10-03.1"
+POLICY_VERSION = "2026-10-03.2"
 DISCLOSURES = [
     {
         "title": "Purpose",
@@ -10,7 +12,7 @@ DISCLOSURES = [
     },
     {
         "title": "What AI analysis does",
-        "text": "When enabled, models estimate sentiment or affect from the modalities you permit. These estimates may inform personal summaries or support signals for authorized human review. Analysis features are still being developed; saving consent does not start recording or download a model.",
+        "text": "Text conversation uses your written messages and recent messages in the same conversation to prepare supportive replies. The default is a local predefined response service, not an LLM or sentiment analysis. A separately configured model service may receive this text when disclosed below. Sentiment or affect analysis uses only the modalities you permit and is separate from conversational replies. Saving consent does not start recording or analysis.",
     },
     {
         "title": "What it does not do",
@@ -48,4 +50,26 @@ DISCLOSURES = [
 
 
 def policy_document():
-    return {"version": POLICY_VERSION, "disclosures": deepcopy(DISCLOSURES)}
+    from app.config import get_settings
+
+    settings = get_settings()
+    processing = {
+        "provider": settings.conversation_provider,
+        "host": urlsplit(settings.conversation_endpoint).hostname or "PamatiAI server",
+        "endpoint_fingerprint": sha256(settings.conversation_endpoint.encode()).hexdigest(),
+        "model": settings.conversation_model
+        if settings.conversation_provider == "compatible-http"
+        else "rule-based-support",
+        "version": settings.conversation_model_version
+        if settings.conversation_provider == "compatible-http"
+        else "1",
+    }
+    disclosures = deepcopy(DISCLOSURES)
+    disclosures[1]["text"] += (
+        f" Current conversational processor: {processing['provider']} on {processing['host']}; model {processing['model']}, version {processing['version']}."
+    )
+    return {
+        "version": POLICY_VERSION,
+        "disclosures": disclosures,
+        "conversation_processing": processing,
+    }

@@ -52,7 +52,7 @@ export function AuthForm({ action }: { action: string }) {
       <button disabled={busy || (["activate", "reset", "invite"].includes(action) && !token)} className="rounded bg-teal-800 px-5 py-3 text-white disabled:opacity-50">{busy ? "Please wait?" : action === "activate" ? "Activate" : "Continue"}</button>
     </form>
     <p role="status" aria-live="polite">{message}</p>
-    {action === "profile" && <div className="flex flex-wrap gap-4"><button disabled={busy} onClick={() => sessionAction("refresh")}>Renew session</button><button disabled={busy} onClick={() => sessionAction("logout")}>Sign out</button><button disabled={busy} onClick={() => sessionAction("logout-all")}>Sign out everywhere</button><a href="/auth/change-password">Change password</a>{profile?.roles.includes("STUDENT") && <><a href="/student/onboarding">Onboarding and consent</a><a href="/student/privacy">Privacy and records</a></>}</div>}
+    {action === "profile" && <div className="flex flex-wrap gap-4"><button disabled={busy} onClick={() => sessionAction("refresh")}>Renew session</button><button disabled={busy} onClick={() => sessionAction("logout")}>Sign out</button><button disabled={busy} onClick={() => sessionAction("logout-all")}>Sign out everywhere</button><a href="/auth/change-password">Change password</a>{profile?.roles.includes("STUDENT") && <><a href="/student/chat">Open chat</a><a href="/student/onboarding">Onboarding and consent</a><a href="/student/privacy">Privacy and records</a></>}</div>}
     <nav className="flex gap-4 text-teal-700"><a href="/auth/login">Sign in</a><a href="/auth/register">Register</a><a href="/auth/forgot-password">Forgot password</a></nav>
   </div>;
 }
