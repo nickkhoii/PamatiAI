@@ -7,6 +7,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file="../.env", extra="ignore")
     environment: str = "development"
+    public_registration_enabled: bool = False
+    institutional_domains: list[str] = []
+    access_token_minutes: int = Field(default=15, ge=1, le=60)
+    session_days: int = Field(default=7, ge=1, le=30)
+    auth_delivery_key: str = Field(default="", repr=False)
+    auth_public_url: str = "http://localhost:3000"
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = Field(default="", repr=False)
+    smtp_from: str = ""
     allow_raw_media_storage: bool = False
     database_url: str = Field(default="mysql+pymysql://pamati:local-only@localhost:3306/pamati?charset=utf8mb4", repr=False)
     cors_origins: list[str] = ["http://localhost:3000"]

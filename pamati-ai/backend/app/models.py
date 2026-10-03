@@ -81,6 +81,7 @@ class User(Entity, Mutable, SoftDelete, Base):
     display_name: Mapped[str] = mapped_column(String(120))
     password_hash: Mapped[str] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_verified_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     is_development_account: Mapped[bool] = mapped_column(Boolean, default=False)
     roles: Mapped[list["Role"]] = relationship(secondary="user_roles", back_populates="users")
     student_profile: Mapped["StudentProfile | None"] = relationship(back_populates="user")
@@ -614,3 +615,55 @@ class MediaAsset(Entity, SoftDelete, Base):
     storage_reference: Mapped[str] = mapped_column(String(255), unique=True)
     expires_at: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
     purged_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+
+
+class AuthSession(Entity, Base):
+    __tablename__ = "auth_sessions"
+    user_id: Mapped[str] = reference("users.id", index=True)
+    family_id: Mapped[str] = mapped_column(String(36), index=True)
+    access_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    refresh_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    access_expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    consumed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    revoked_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+
+
+class AuthChallenge(Entity, Base):
+    __tablename__ = "auth_challenges"
+    user_id: Mapped[str | None] = reference("users.id", index=True)
+    email: Mapped[str] = mapped_column(String(254))
+    purpose: Mapped[str] = mapped_column(String(16))
+    role_code: Mapped[str | None] = mapped_column(String(40))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    consumed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+
+
+class AuthDelivery(Entity, Base):
+    __tablename__ = "auth_deliveries"
+    challenge_id: Mapped[str] = reference("auth_challenges.id", index=True)
+    encrypted_payload: Mapped[str | None] = mapped_column(Text)
+    sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class AuthRateLimit(Base):
+    __tablename__ = "auth_rate_limits"
+    __table_args__ = TABLE_OPTIONS
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    window_start: Mapped[datetime] = mapped_column(UTCDateTime)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class SupportRequest(Entity, Base):
+    __tablename__ = "support_requests"
+    student_id: Mapped[str] = reference("student_profiles.user_id", index=True)
+    status: Mapped[str] = mapped_column(String(20), default="requested")
+
+
+class DataControlRequest(Entity, Base):
+    __tablename__ = "data_control_requests"
+    student_id: Mapped[str] = reference("student_profiles.user_id", index=True)
+    kind: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(20), default="requested")

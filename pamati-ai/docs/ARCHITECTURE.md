@@ -4,7 +4,7 @@ PamatiAI: A Multimodal Conversational AI Framework for Student Mental Health and
 
 ## Scope and implementation status
 
-This foundation runs a Next.js application, a FastAPI REST service, and MySQL 8.4 with utf8mb4. Implemented: live service status, readiness checking, validated configuration, SQLAlchemy connection lifecycle, 30 normalized database tables, explicit Alembic migrations, consent-aware persistence, database provenance/audit guards, development seed commands, deny-by-default authorization policy and automated database tests. Authentication, participant-facing data workflows, inference execution and notification dispatch remain planned. No student data is collected by exposed endpoints and no clinical claims are made by the foundation. See [DATABASE.md](DATABASE.md) for implemented persistence relationships and limitations.
+This foundation runs a Next.js application, a FastAPI REST service, and MySQL 8.4 with utf8mb4. Implemented: live service status, readiness checking, validated configuration, SQLAlchemy connection lifecycle, 36 normalized database tables, explicit Alembic migrations, consent-aware persistence, database provenance/audit guards, development seed commands, deny-by-default authorization policy and automated database tests. Authentication, institutional onboarding, browser account forms, protected resource APIs and encrypted authentication email dispatch are implemented. Full participant workspaces, inference execution, privacy fulfillment and domain notification workers remain planned. No clinical claims are made. See [DATABASE.md](DATABASE.md) for implemented persistence relationships and limitations.
 
 ## Components and boundaries
 
@@ -13,7 +13,7 @@ This foundation runs a Next.js application, a FastAPI REST service, and MySQL 8.
 | Student application | Accessible conversations, consent choices, history and data controls; own records only. |
 | Counselor/reviewer portal | Assigned, consenting students; review indicators and record human decisions. |
 | Administrator portal | Accounts, assignments, configuration and aggregate operations; no default content access. |
-| Authentication service | Argon2id passwords, short-lived sessions, revocation, MFA for staff; server establishes identity. |
+| Authentication service | Argon2id passwords, short-lived sessions, revocation; server establishes identity. Staff MFA/SSO remains planned. |
 | Consent management | Versioned purpose-specific receipts; independent text, speech, visual and research choices; withdrawal gates pending work. |
 | Conversation service | Persist consented messages, support-oriented replies; no medical advice. |
 | Text analysis | Versioned pluggable sentiment/affect inference with uncertainty and provenance. |
@@ -31,11 +31,11 @@ This foundation runs a Next.js application, a FastAPI REST service, and MySQL 8.
 
 Browser -> Next.js -> FastAPI -> SQLAlchemy -> MySQL. Future inference workers receive pseudonymous jobs only after consent and ownership validation, and recheck consent before publishing outputs. Transactional outbox records work and notifications alongside domain changes. Separate object storage is planned for ephemeral encrypted media; media must never enter application logs.
 
-Use opaque identifiers, UTC timestamps and ownership-carrying composite foreign keys. These persistence entities are now implemented; queue workers and application endpoints remain planned. Analysis runs retain adapter version, model revision, preprocessing revision, modality availability, consent receipt, uncertainty and input lineage. Do not combine observations across changed model versions without documented validation.
+Use opaque identifiers, UTC timestamps and ownership-carrying composite foreign keys. These persistence entities are now implemented; protected application endpoints and an authentication email dispatcher are implemented; inference and privacy fulfillment workers remain planned. Analysis runs retain adapter version, model revision, preprocessing revision, modality availability, consent receipt, uncertainty and input lineage. Do not combine observations across changed model versions without documented validation.
 
 ## Authorization
 
-STUDENT may access their own consent, conversation, history and privacy resources. COUNSELOR may access assigned student records only with an applicable active consent or a separately documented institution-approved emergency legal basis. SYSTEM_ADMINISTRATOR may manage accounts and configuration, but cannot read student content by default. The implemented policy enforces role, ownership, assignment and active consent independently; it is not an authentication endpoint. All future routes must authenticate first and apply resource policy server-side. Unknown permissions deny.
+STUDENT may access their own consent, conversation, history and privacy resources. COUNSELOR may access assigned student records only with an applicable active consent (no emergency override is implemented). ADMIN may manage accounts and configuration, but cannot read student content by default. The implemented policy enforces role, ownership, assignment and active consent independently; server-established bearer identity backs protected API routes. All new sensitive routes must authenticate first and apply resource policy server-side. See [AUTHENTICATION.md](AUTHENTICATION.md). Unknown permissions deny.
 
 ## Deployment and reproducibility
 

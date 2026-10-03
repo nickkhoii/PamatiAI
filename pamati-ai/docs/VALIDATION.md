@@ -30,3 +30,19 @@ Before accepting the integrated development environment on a Docker-equipped mac
 Without TEST_DATABASE_URL, the 32 integration tests skip explicitly and foundation tests still run. See [DATABASE.md](DATABASE.md) for the isolated `_test` database requirement and seed commands. Downgrades were exercised only on the disposable test schema, never on participant data.
 
 No browser automation or manual assistive-technology review was performed. The frontend includes semantic landmarks, heading hierarchy, a skip link, visible keyboard focus and an announced status region, but full accessibility validation remains required before participant use.
+
+## Authentication/RBAC validation ? 2026-10-03
+
+Implemented migration 0005_authentication and validated against a separate workspace-local `pamati_auth_test` MySQL 8.4.4 database. No participant schema or real `.env` was changed. The full backend run passed 124 tests: 40 authentication tests on each of SQLite and MySQL, 12 foundation tests and 32 MySQL persistence tests. Two subsequently added logout/delivery tests passed on both databases; affected logout tests were also rerun. Ruff and offline migration SQL generation passed. Live migration upgrade through 0005 passed and Alembic reported no schema drift.
+
+The frontend production build and TypeScript check passed. The two Node tests passed with `RUN_AUTH_GATEWAY_TESTS=1`: the existing status test plus an actual Next.js production gateway test against a mock backend. It checks rejected cross-origin mutations, HttpOnly/Secure/SameSite cookie attributes, removal of tokens from browser response bodies, bearer forwarding, refresh cookie authority and logout after access expiry. It does not claim real SMTP delivery or end-to-end browser automation.
+
+Run the gateway test after a production build:
+
+```powershell
+npm.cmd run build
+$env:RUN_AUTH_GATEWAY_TESTS = '1'
+try { npm.cmd test } finally { Remove-Item Env:RUN_AUTH_GATEWAY_TESTS }
+```
+
+Without TEST_DATABASE_URL, SQLite authorization tests still run; MySQL persistence tests explicitly skip. The optional authentication MySQL fixture requires an isolated `_test` database and the current migrations. SMTP sending is implemented but not exercised against a real provider; configure delivery and schedule the dispatcher before enabling onboarding/recovery.

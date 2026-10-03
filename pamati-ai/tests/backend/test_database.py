@@ -501,7 +501,7 @@ def test_complete_support_review_and_longitudinal_evidence_graph(db):
     db.add(signal)
     db.flush()
     reviewer = db.scalar(select(User).where(User.email == DEVELOPMENT_EMAILS["COUNSELOR"]))
-    admin = db.scalar(select(User).where(User.email == DEVELOPMENT_EMAILS["SYSTEM_ADMINISTRATOR"]))
+    admin = db.scalar(select(User).where(User.email == DEVELOPMENT_EMAILS["ADMIN"]))
     db.add(ReviewerAssignment(student_id=data[0].id, reviewer_id=reviewer.id, assigned_by=admin.id))
     db.flush()
     review = HumanReview(

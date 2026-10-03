@@ -65,3 +65,5 @@ npm.cmd run build
 The Python lock includes development tooling for this research foundation. Update it deliberately using `uv pip compile backend/pyproject.toml --extra dev --python-version 3.12 -o backend/requirements.lock`. Commit frontend/package-lock.json after intentional dependency updates. Optional heavy ML dependencies are declared in backend/pyproject.toml but excluded from the base lock.
 
 Architecture and implementation boundaries: [ARCHITECTURE](docs/ARCHITECTURE.md), [DATABASE](docs/DATABASE.md), [SECURITY](docs/SECURITY.md), [AI_SAFETY](docs/AI_SAFETY.md). DATABASE includes initialization, explicit development-account seeds and real-MySQL tests. See docs/VALIDATION.md for checks run in the creation environment and remaining verification.
+
+Authentication and role-based access: see [deployment and API instructions](docs/AUTHENTICATION.md). Start browser account flows at `/auth/login`.

@@ -6,7 +6,8 @@ from enum import StrEnum
 class Role(StrEnum):
     STUDENT = "STUDENT"
     COUNSELOR = "COUNSELOR"
-    SYSTEM_ADMINISTRATOR = "SYSTEM_ADMINISTRATOR"
+    ADMIN = "ADMIN"
+    SYSTEM_ADMINISTRATOR = "ADMIN"  # Compatibility for callers of the original policy helper.
 
 
 @dataclass(frozen=True)
@@ -24,7 +25,7 @@ def permitted(
     consent_active: bool = False,
 ) -> bool:
     if principal.role == Role.STUDENT:
-        return permission in {"consent:manage", "conversation:manage", "history:read", "privacy:manage"} and student_id == principal.user_id
+        return permission in {"consent:manage", "conversation:manage", "history:read", "privacy:manage", "support:request"} and student_id == principal.user_id
     if principal.role == Role.COUNSELOR:
         return permission in {"history:read", "review:manage"} and student_id is not None and assigned and consent_active
     if principal.role == Role.SYSTEM_ADMINISTRATOR:

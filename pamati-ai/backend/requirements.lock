@@ -28,7 +28,9 @@ click==8.5.0
 colorama==0.4.6
     # via pytest
 cryptography==50.0.2
-    # via pymysql
+    # via
+    #   pamati-backend (pamati-ai/backend/pyproject.toml)
+    #   pymysql
 fastapi==0.142.2
     # via pamati-backend (pamati-ai/backend/pyproject.toml)
 greenlet==3.5.6

@@ -24,7 +24,18 @@ services:
     command: ["alembic", "upgrade", "head"]
     environment: &backend_env
       DATABASE_URL: mysql+pymysql://${MYSQL_USER:-pamati}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE:-pamati}?charset=utf8mb4
-      ENVIRONMENT: development
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      PUBLIC_REGISTRATION_ENABLED: ${PUBLIC_REGISTRATION_ENABLED:-false}
+      INSTITUTIONAL_DOMAINS: ${INSTITUTIONAL_DOMAINS:-[]}
+      ACCESS_TOKEN_MINUTES: ${ACCESS_TOKEN_MINUTES:-15}
+      SESSION_DAYS: ${SESSION_DAYS:-7}
+      AUTH_DELIVERY_KEY: ${AUTH_DELIVERY_KEY:-}
+      AUTH_PUBLIC_URL: ${AUTH_PUBLIC_URL:-http://localhost:3000}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
       ALLOW_RAW_MEDIA_STORAGE: ${ALLOW_RAW_MEDIA_STORAGE:-false}
       CORS_ORIGINS: '["http://localhost:3000"]'
       ALLOWED_HOSTS: '["localhost","127.0.0.1","backend"]'
@@ -56,6 +67,7 @@ services:
       dockerfile: docker/frontend.Dockerfile
     environment:
       API_INTERNAL_URL: http://backend:8000
+      AUTH_PUBLIC_URL: ${AUTH_PUBLIC_URL:-http://localhost:3000}
       NEXT_TELEMETRY_DISABLED: '1'
     ports: ["127.0.0.1:3000:3000"]
     volumes:

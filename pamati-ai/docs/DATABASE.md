@@ -114,7 +114,7 @@ $env:DEV_SEED_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host 'Dev
 Remove-Item Env:DEV_SEED_PASSWORD
 ```
 
-Accounts: `dev.student@pamati.example`, `dev.reviewer@pamati.example`, `dev.admin@pamati.example`. Each has one role, an Argon2id password hash, `is_development_account=true` and a `[DEVELOPMENT ONLY]` display name. Reviewer/student profiles are created as needed. Administrators receive only account/configuration grants. Seeds create no consent receipts, assignments, conversations or analysis results. Existing passwords/grants are never reset. Authenticated login endpoints remain a later stage.
+Accounts: `dev.student@pamati.example`, `dev.reviewer@pamati.example`, `dev.admin@pamati.example`. Each has one role, an Argon2id password hash, `is_development_account=true` and a `[DEVELOPMENT ONLY]` display name. Reviewer/student profiles are created as needed. Administrators receive only account/configuration grants. Seeds create no consent receipts, assignments, conversations or analysis results. Existing passwords/grants are never reset. Authentication endpoints and institutional onboarding are documented in [AUTHENTICATION.md](AUTHENTICATION.md).
 
 With Compose, the migrate service upgrades the schema. Seed roles using:
 

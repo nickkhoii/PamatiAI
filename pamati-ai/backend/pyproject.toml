@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "pamati-backend"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["fastapi>=0.115,<1", "uvicorn[standard]>=0.34,<1", "pydantic-settings>=2.7,<3", "SQLAlchemy>=2.0,<2.1", "PyMySQL[rsa]>=1.1,<2", "alembic>=1.14,<2", "argon2-cffi>=23.1,<26"]
+dependencies = ["fastapi>=0.115,<1", "uvicorn[standard]>=0.34,<1", "pydantic-settings>=2.7,<3", "SQLAlchemy>=2.0,<2.1", "PyMySQL[rsa]>=1.1,<2", "alembic>=1.14,<2", "argon2-cffi>=23.1,<26", "cryptography>=44,<51"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "httpx>=0.28,<1", "ruff>=0.9,<1"]

@@ -16,14 +16,14 @@ from app.config import get_settings
 from app.models import Permission, ReviewerProfile, Role, StudentProfile, SystemSetting, User
 
 ROLE_PERMISSIONS = {
-    "STUDENT": {"consent:manage", "conversation:manage", "history:read", "privacy:manage"},
+    "STUDENT": {"consent:manage", "conversation:manage", "history:read", "privacy:manage", "support:request"},
     "COUNSELOR": {"history:read", "review:manage"},
-    "SYSTEM_ADMINISTRATOR": {"accounts:manage", "configuration:manage"},
+    "ADMIN": {"accounts:manage", "configuration:manage"},
 }
 DEVELOPMENT_EMAILS = {
     "STUDENT": "dev.student@pamati.example",
     "COUNSELOR": "dev.reviewer@pamati.example",
-    "SYSTEM_ADMINISTRATOR": "dev.admin@pamati.example",
+    "ADMIN": "dev.admin@pamati.example",
 }
 
 

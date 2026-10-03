@@ -8,8 +8,10 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from app.auth_routes import router as auth_router
 from app.config import get_settings
 from app.db import engine
+from app.resource_routes import router as resource_router
 
 
 @asynccontextmanager
@@ -23,8 +25,19 @@ settings = get_settings()
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
 app.add_middleware(
     CORSMiddleware, allow_origins=settings.cors_origins,
-    allow_credentials=False, allow_methods=["GET"], allow_headers=["Accept"],
+    allow_credentials=False, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Accept", "Authorization", "Content-Type"],
 )
+app.include_router(auth_router)
+app.include_router(resource_router)
+
+
+@app.middleware("http")
+async def private_response_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 class Health(BaseModel):
