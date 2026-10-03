@@ -396,7 +396,11 @@ def test_profile_admin_permissions_and_student_own_resources(api):
     base = f"/api/v1/students/{users['alice'].id}"
     assert client.get(base + "/conversations", headers=alice).status_code == 200
     assert (
-        client.put(base + "/consent", headers=alice, json={"policy_version": "v2"}).status_code
+        client.put(
+            base + "/consent",
+            headers=alice,
+            json={"policy_version": "2026-10-03.1", "acknowledged": True, "retention_version": 1},
+        ).status_code
         == 200
     )
     assert client.post(base + "/support-requests", headers=alice).status_code == 201

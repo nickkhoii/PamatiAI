@@ -162,6 +162,7 @@ class ConsentRecord(Entity, Base):
     student_id: Mapped[str] = reference("student_profiles.user_id", index=True)
     version: Mapped[int] = mapped_column(Integer)
     policy_version: Mapped[str] = mapped_column(String(80))
+    disclosure_snapshot: Mapped[dict | None] = mapped_column(JSON)
     text_processing: Mapped[bool] = mapped_column(Boolean, default=False)
     audio_processing: Mapped[bool] = mapped_column(Boolean, default=False)
     visual_processing: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -182,6 +183,7 @@ class Conversation(Entity, Mutable, SoftDelete, Base):
         TABLE_OPTIONS,
     )
     student_id: Mapped[str] = reference("student_profiles.user_id")
+    retention_snapshot: Mapped[dict | None] = mapped_column(JSON)
     status: Mapped[str] = mapped_column(
         choice("conversation_status", "open", "closed"), default="open"
     )
@@ -296,6 +298,7 @@ class ModelInference(Entity, Mutable, SoftDelete, Base):
     consent_record_id: Mapped[str] = mapped_column(String(36), index=True)
     model_version_id: Mapped[str] = mapped_column(String(36), index=True)
     modality: Mapped[str] = mapped_column(choice("inference_modality", *MODALITIES))
+    input_modalities: Mapped[list | None] = mapped_column(JSON)
     processing_status: Mapped[str] = mapped_column(
         choice(
             "processing_status",
@@ -667,3 +670,17 @@ class DataControlRequest(Entity, Base):
     student_id: Mapped[str] = reference("student_profiles.user_id", index=True)
     kind: Mapped[str] = mapped_column(String(20))
     status: Mapped[str] = mapped_column(String(20), default="requested")
+    review_due_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    decision_reason: Mapped[str | None] = mapped_column(String(500))
+    decided_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+
+
+class RetentionHold(Entity, Base):
+    __tablename__ = "retention_holds"
+    student_id: Mapped[str] = reference("student_profiles.user_id", index=True)
+    category: Mapped[str] = mapped_column(String(20))
+    reason: Mapped[str] = mapped_column(String(500))
+    legal_basis: Mapped[str] = mapped_column(String(255))
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    created_by: Mapped[str] = reference("users.id")
+    released_at: Mapped[datetime | None] = mapped_column(UTCDateTime)

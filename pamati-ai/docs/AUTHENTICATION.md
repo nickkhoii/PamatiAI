@@ -65,3 +65,5 @@ Deployment must keep the backend private behind the gateway or a trusted edge, u
 ## Validation
 
 `test_auth.py` exercises real HTTP dependencies and persisted sessions against SQLite, and against an explicitly configured MySQL `_test` database. It proves cross-user read/write denial, assigned versus unassigned counselor access, current consent/permission enforcement, ADMIN content denial, single-use challenge expiry, role/deactivation revocation, refresh rotation/replay, and password recovery/change. The existing MySQL tests additionally enforce ownership, consent, evidence and append-only audit constraints. All fixtures roll back their data.
+
+Consent PUT requests now require the current onboarding policy version and `acknowledged: true`, plus the displayed `retention_version`; send `expected_version` to reject stale edits. Read `/api/v1/me/onboarding` for the disclosure/retention policy. Consent permission fields remain separate and default false. The authenticated browser gateway derives student IDs from `/me` and provides owner-scoped consent, records, support and privacy-request actions.

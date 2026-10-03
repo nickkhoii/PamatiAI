@@ -46,3 +46,13 @@ try { npm.cmd test } finally { Remove-Item Env:RUN_AUTH_GATEWAY_TESTS }
 ```
 
 Without TEST_DATABASE_URL, SQLite authorization tests still run; MySQL persistence tests explicitly skip. The optional authentication MySQL fixture requires an isolated `_test` database and the current migrations. SMTP sending is implemented but not exercised against a real provider; configure delivery and schedule the dispatcher before enabling onboarding/recovery.
+
+## Student consent and privacy validation ? 2026-10-03
+
+Migration 0006_consent_privacy was applied to the isolated `pamati_auth_test` MySQL 8.4.4 database. A downgrade to 0005 and re-upgrade succeeded, including retention defaults and new evidence guards; Alembic reported no schema drift. The real `.env` and participant schemas were not changed.
+
+The full backend run passed 179 tests with one intentional SQLite skip for MySQL-only disclosure/manifest triggers. Subsequent retention-version changes and added cached-receipt regressions were checked with 63 passing affected consent/authorization cases (one MySQL-trigger skip), then eight passing cached-receipt/withdrawal cases across SQLite and MySQL. Tests verify false optional defaults, independent modality gates before adapter execution, exclusion of disabled fusion inputs, withdrawal during adapter execution, current consent over cached ORM state, timestamp/version/disclosure evidence, immutable snapshots, retention conflicts, raw-expiry caps, independent research/tracking permission, owner-only personal views and finite transparent holds. Ruff and offline migration SQL generation passed.
+
+Next.js production build, TypeScript and the two Node tests passed. The production gateway test additionally checks server-derived student identity despite a client-supplied owner query, PUT forwarding for consent, DELETE forwarding for withdrawal, and preservation of explicitly false optional fields. Real model execution, recording devices, SMTP delivery, physical erasure across storage/backups and completed export fulfillment are not claimed as validated.
+
+Student pages: `/student/onboarding`, `/student/privacy`, `/student/records`. Apply current migrations before running the backend. Retention settings default to documented example limits; institutions must approve actual periods and hold procedures before participant onboarding. `python -m app.retention_report` prints aggregate due/held counts and does not delete records.

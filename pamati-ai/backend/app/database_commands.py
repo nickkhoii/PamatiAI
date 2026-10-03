@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models import Permission, ReviewerProfile, Role, StudentProfile, SystemSetting, User
+from app.retention import RetentionPolicy
 
 ROLE_PERMISSIONS = {
     "STUDENT": {"consent:manage", "conversation:manage", "history:read", "privacy:manage", "support:request"},
@@ -62,6 +63,7 @@ def seed(session: Session, *, development_accounts=False, password=None, environ
             session.add(permission)
         permissions[code] = permission
     session.flush()
+
     for code, grants in ROLE_PERMISSIONS.items():
         role = session.scalar(select(Role).where(Role.code == code))
         if role is None:
@@ -100,6 +102,9 @@ def seed(session: Session, *, development_accounts=False, password=None, environ
                 description="Raw media requires this gate, environment opt-in and consent",
             )
         )
+    if session.get(SystemSetting, "data_retention") is None:
+        session.add(SystemSetting(key="data_retention", value=RetentionPolicy().model_dump(),
+            description="Configured retention limits; time-limited holds are separately documented"))
     session.flush()
 
 

@@ -4,7 +4,7 @@ PamatiAI: A Multimodal Conversational AI Framework for Student Mental Health and
 
 ## Scope and implementation status
 
-This foundation runs a Next.js application, a FastAPI REST service, and MySQL 8.4 with utf8mb4. Implemented: live service status, readiness checking, validated configuration, SQLAlchemy connection lifecycle, 36 normalized database tables, explicit Alembic migrations, consent-aware persistence, database provenance/audit guards, development seed commands, deny-by-default authorization policy and automated database tests. Authentication, institutional onboarding, browser account forms, protected resource APIs and encrypted authentication email dispatch are implemented. Full participant workspaces, inference execution, privacy fulfillment and domain notification workers remain planned. No clinical claims are made. See [DATABASE.md](DATABASE.md) for implemented persistence relationships and limitations.
+This foundation runs a Next.js application, a FastAPI REST service, and MySQL 8.4 with utf8mb4. Implemented: live service status, readiness checking, validated configuration, SQLAlchemy connection lifecycle, 37 normalized database tables, explicit Alembic migrations, consent-aware persistence, database provenance/audit guards, development seed commands, deny-by-default authorization policy and automated database tests. Authentication, institutional onboarding, browser account forms, protected resource APIs and encrypted authentication email dispatch are implemented. Full participant workspaces, inference execution, privacy fulfillment and domain notification workers remain planned. No clinical claims are made. See [DATABASE.md](DATABASE.md) for implemented persistence relationships and limitations.
 
 ## Components and boundaries
 
@@ -44,3 +44,5 @@ Docker Compose is a local development environment, not a production deployment. 
 Pin frontend dependencies in package-lock.json and Python dependencies in requirements.lock. Heavy ML libraries are optional; no models are downloaded at startup. Record model and dataset licenses, revisions, seeds, evaluation splits and hardware with each future experiment. Evaluate calibration, abstention, subgroup performance and temporal drift using scikit-learn; obtain research governance approval before collecting participant data.
 
 References: [Next.js installation](https://nextjs.org/docs/app/getting-started/installation), [FastAPI containers](https://fastapi.tiangolo.com/deployment/docker/), [SQLAlchemy MySQL dialect](https://docs.sqlalchemy.org/en/20/dialects/mysql.html).
+
+Student onboarding and informed consent are available at `/student/onboarding`; privacy controls and personal records are at `/student/privacy` and `/student/records`. See [privacy](PRIVACY.md) and [consent model](CONSENT_MODEL.md) for consent gates, retention policies and fulfillment boundaries.

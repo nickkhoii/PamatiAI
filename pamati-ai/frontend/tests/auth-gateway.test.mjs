@@ -11,12 +11,14 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
   const backend = createServer(async (request, response) => {
     let body = "";
     for await (const chunk of request) body += chunk;
-    calls.push({ path: request.url, body: body ? JSON.parse(body) : {}, authorization: request.headers.authorization });
+    calls.push({ path: request.url, method: request.method, body: body ? JSON.parse(body) : {}, authorization: request.headers.authorization });
     response.setHeader("Content-Type", "application/json");
     if (["/api/v1/auth/login", "/api/v1/auth/refresh"].includes(request.url)) {
       response.end(JSON.stringify({ access_token: "test-access-secret", refresh_token: "test-refresh-secret", expires_in: 900 }));
     } else if (request.url === "/api/v1/me") {
-      response.end(JSON.stringify({ email: "test@example.com", display_name: "Test", roles: ["STUDENT"] }));
+      response.end(JSON.stringify({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", email: "test@example.com", display_name: "Test", roles: ["STUDENT"] }));
+    } else if (request.url.startsWith("/api/v1/students/") && request.method !== "DELETE") {
+      response.end(JSON.stringify({ records: [], next_offset: null }));
     } else { response.writeHead(204); response.end(); }
   });
   const backendPort = await listen(backend);
@@ -52,6 +54,17 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
     const profile = await fetch(origin + "/api/auth/profile", { headers: { Cookie: cookieHeader } });
     assert.equal(profile.status, 200);
     assert.equal(calls.at(-1).authorization, "Bearer test-access-secret");
+    const records = await fetch(origin + "/api/auth/records?category=research&student_id=bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", { headers: { Cookie: cookieHeader } });
+    assert.equal(records.status, 200);
+    assert.equal(calls.at(-1).path, "/api/v1/students/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/records?category=research&offset=0");
+    const consent = await fetch(origin + "/api/auth/consent", { method: "POST", headers: { Origin: origin, Cookie: cookieHeader, "Content-Type": "application/json" }, body: JSON.stringify({ policy_version: "test", text_processing: true, audio_processing: false }) });
+    assert.equal(consent.status, 200);
+    assert.equal(calls.at(-1).method, "PUT");
+    assert.equal(calls.at(-1).path, "/api/v1/students/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/consent");
+    assert.equal(calls.at(-1).body.audio_processing, false);
+    const withdrawn = await fetch(origin + "/api/auth/withdraw-consent", { method: "POST", headers: { Origin: origin, Cookie: cookieHeader, "Content-Type": "application/json" }, body: "{}" });
+    assert.equal(withdrawn.status, 200);
+    assert.equal(calls.at(-1).method, "DELETE");
     const refreshed = await fetch(origin + "/api/auth/refresh", { method: "POST", headers: { Origin: origin, Cookie: cookieHeader, "Content-Type": "application/json" }, body: JSON.stringify({ token: "client-forged-value" }) });
     assert.equal(refreshed.status, 200);
     assert.equal(calls.at(-1).body.token, "test-refresh-secret");

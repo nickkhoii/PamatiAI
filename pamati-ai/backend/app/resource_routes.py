@@ -3,11 +3,12 @@
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import Field
+from pydantic import Field, StrictBool
 from sqlalchemy import func, select
 
 from app.auth_dependencies import DB, CurrentUser, audit, authorize_student, require_permission
 from app.auth_routes import AccountManager, Admin, Input
+from app.consent_policy import POLICY_VERSION, policy_document
 from app.models import (
     ConsentRecord,
     Conversation,
@@ -28,7 +29,8 @@ from app.models import (
     User,
     utcnow,
 )
-from app.persistence import ConsentDenied, record_consent, withdraw_consent
+from app.persistence import ConsentDenied, current_consent, record_consent, withdraw_consent
+from app.retention import RetentionPolicy, retention_policy
 
 router = APIRouter(prefix="/api/v1", tags=["protected resources"])
 ConfigurationManager = Annotated[User, Depends(require_permission("configuration:manage"))]
@@ -36,14 +38,17 @@ ConfigurationManager = Annotated[User, Depends(require_permission("configuration
 
 class ConsentInput(Input):
     policy_version: str = Field(min_length=1, max_length=80)
-    text_processing: bool = False
-    audio_processing: bool = False
-    visual_processing: bool = False
-    longitudinal_tracking: bool = False
-    research_data_use: bool = False
-    reviewer_access: bool = False
-    retain_audio: bool = False
-    retain_visual: bool = False
+    acknowledged: StrictBool = False
+    expected_version: int | None = Field(default=None, ge=0)
+    retention_version: int | None = Field(default=None, ge=1)
+    text_processing: StrictBool = False
+    audio_processing: StrictBool = False
+    visual_processing: StrictBool = False
+    longitudinal_tracking: StrictBool = False
+    research_data_use: StrictBool = False
+    reviewer_access: StrictBool = False
+    retain_audio: StrictBool = False
+    retain_visual: StrictBool = False
 
 
 class DataInput(Input):
@@ -80,8 +85,14 @@ def receipt_view(c):
     return {
         "id": c.id,
         "version": c.version,
+        "created_at": c.created_at,
         "withdrawn_at": c.withdrawn_at,
-        **{name: getattr(c, name) for name in ConsentInput.model_fields},
+        "disclosure_snapshot": c.disclosure_snapshot,
+        **{
+            name: getattr(c, name)
+            for name in ConsentInput.model_fields
+            if name not in {"acknowledged", "expected_version", "retention_version"}
+        },
     }
 
 
@@ -103,7 +114,13 @@ def conversations(student_id: str, db: DB, user: CurrentUser):
 @router.post("/students/{student_id}/conversations", status_code=201)
 def create_conversation(student_id: str, db: DB, user: CurrentUser):
     authorize_student(db, user, "conversation:manage", student_id)
-    row = Conversation(student_id=student_id)
+    try:
+        receipt = current_consent(db, student_id)
+        if not receipt.text_processing:
+            raise ConsentDenied("Text analysis consent is required for conversational AI")
+    except ConsentDenied as exc:
+        raise HTTPException(409, str(exc)) from None
+    row = Conversation(student_id=student_id, retention_snapshot=retention_policy(db).model_dump())
     db.add(row)
     db.flush()
     audit(db, user.id, "conversation.created", "conversation", row.id)
@@ -165,8 +182,36 @@ def consent(student_id: str, db: DB, user: CurrentUser):
 @router.put("/students/{student_id}/consent")
 def manage_consent(student_id: str, body: ConsentInput, db: DB, user: CurrentUser):
     authorize_student(db, user, "consent:manage", student_id)
+    if body.policy_version != POLICY_VERSION or not body.acknowledged:
+        raise HTTPException(409, "Review and acknowledge the current consent information")
     try:
-        row = record_consent(db, student_id, **body.model_dump())
+        from app.persistence import lock_student
+
+        lock_student(db, student_id)
+        previous = db.scalar(
+            select(ConsentRecord)
+            .where(ConsentRecord.student_id == student_id)
+            .order_by(ConsentRecord.version.desc())
+            .limit(1)
+            .with_for_update()
+        )
+        if body.expected_version is not None and body.expected_version != (
+            previous.version if previous else 0
+        ):
+            raise HTTPException(409, "Consent changed. Reload your choices before saving.")
+        snapshot = policy_document()
+        policy = retention_policy(db, lock=True)
+        if body.retention_version != policy.version:
+            raise HTTPException(
+                409, "Retention information changed. Reload and review it before saving."
+            )
+        snapshot["retention"] = policy.model_dump()
+        row = record_consent(
+            db,
+            student_id,
+            disclosure_snapshot=snapshot,
+            **body.model_dump(exclude={"acknowledged", "expected_version", "retention_version"}),
+        )
     except ConsentDenied as exc:
         raise HTTPException(409, str(exc)) from None
     audit(db, user.id, "consent.updated", "consent", row.id)
@@ -254,18 +299,33 @@ def support_requests(student_id: str, db: DB, user: CurrentUser):
 def data_controls(student_id: str, body: DataInput, db: DB, user: CurrentUser):
     authorize_student(db, user, "privacy:manage", student_id)
     row = DataControlRequest(student_id=student_id, kind=body.kind)
+    from datetime import timedelta
+
+    row.review_due_at = utcnow() + timedelta(days=retention_policy(db).request_review_days)
     db.add(row)
     db.flush()
     audit(db, user.id, "privacy.requested", "data_control", row.id)
     db.commit()
-    return {"id": row.id, "kind": row.kind, "status": row.status}
+    return {
+        "id": row.id,
+        "kind": row.kind,
+        "status": row.status,
+        "review_due_at": row.review_due_at,
+    }
 
 
 @router.get("/students/{student_id}/data-controls")
 def data_requests(student_id: str, db: DB, user: CurrentUser):
     authorize_student(db, user, "privacy:manage", student_id)
     return [
-        {"id": r.id, "kind": r.kind, "status": r.status}
+        {
+            "id": r.id,
+            "kind": r.kind,
+            "status": r.status,
+            "created_at": r.created_at,
+            "review_due_at": r.review_due_at,
+            "decision_reason": r.decision_reason,
+        }
         for r in db.scalars(
             select(DataControlRequest).where(DataControlRequest.student_id == student_id).limit(100)
         )
@@ -414,16 +474,27 @@ def update_setting(
     key: str, body: SettingInput, db: DB, admin: Admin, manager: ConfigurationManager
 ):
     # Only existing non-secret configuration can be changed through the API.
-    row = db.get(SystemSetting, key)
+    row = db.get(SystemSetting, key, with_for_update=True, populate_existing=True)
     if not row:
         raise HTTPException(404, "Setting not found")
-    if (
-        key != "raw_media_retention"
-        or set(body.value) != {"enabled"}
-        or type(body.value["enabled"]) is not bool
+    if key == "data_retention":
+        from pydantic import ValidationError
+
+        try:
+            candidate = RetentionPolicy.model_validate(body.value)
+        except ValidationError:
+            raise HTTPException(422, "Invalid retention limits") from None
+        candidate.version = retention_policy(db).version + 1
+        row.value = candidate.model_dump()
+    elif (
+        key == "raw_media_retention"
+        and set(body.value) == {"enabled"}
+        and type(body.value["enabled"]) is bool
     ):
+        row.value = body.value
+    else:
         raise HTTPException(422, "Unsupported configuration value")
-    row.value, row.updated_by = body.value, admin.id
+    row.updated_by = admin.id
     audit(db, admin.id, "configuration.updated", "setting")
     db.commit()
     return {"key": key, "value": row.value}

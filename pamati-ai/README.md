@@ -6,9 +6,9 @@ Production-oriented research prototype foundation for higher-education student s
 
 ## What works now
 
-Next.js/React/TypeScript/Tailwind shell with real service status; FastAPI liveness and database readiness; normalized MySQL utf8mb4 schema with 30 domain tables; SQLAlchemy models and explicit Alembic migrations; consent-aware persistence helpers and database guards; Argon2id development seeds; tested least-privilege authorization policy; pluggable analysis contracts; Docker development services and dependency locks.
+Next.js/React/TypeScript/Tailwind shell with real service status; FastAPI liveness and database readiness; normalized MySQL utf8mb4 schema with 37 domain/authentication tables; SQLAlchemy models and explicit Alembic migrations; consent-aware persistence helpers and database guards; Argon2id development seeds; tested least-privilege authorization policy; pluggable analysis contracts; Docker development services and dependency locks.
 
-Student, reviewer and administrator API/UI workflows remain planned. Database persistence is implemented, but no login, conversation submission, consent UI, model execution or notification dispatch endpoint is exposed. Do not onboard real participants until those workflows and institutional governance have been reviewed.
+Authentication, institutional onboarding, informed consent, student privacy views, and protected student/counselor/administrator APIs are implemented. Full conversational message submission, real model integration, domain notifications, physical erasure/export fulfillment and full staff workspaces remain planned. Institutional governance and operational integrations must be validated before onboarding real participants.
 
 ## Docker development
 
@@ -67,3 +67,5 @@ The Python lock includes development tooling for this research foundation. Updat
 Architecture and implementation boundaries: [ARCHITECTURE](docs/ARCHITECTURE.md), [DATABASE](docs/DATABASE.md), [SECURITY](docs/SECURITY.md), [AI_SAFETY](docs/AI_SAFETY.md). DATABASE includes initialization, explicit development-account seeds and real-MySQL tests. See docs/VALIDATION.md for checks run in the creation environment and remaining verification.
 
 Authentication and role-based access: see [deployment and API instructions](docs/AUTHENTICATION.md). Start browser account flows at `/auth/login`.
+
+Student onboarding and informed consent are available at `/student/onboarding`; privacy controls and personal records are at `/student/privacy` and `/student/records`. See [privacy](docs/PRIVACY.md) and [consent model](docs/CONSENT_MODEL.md) for consent gates, retention policies and fulfillment boundaries.

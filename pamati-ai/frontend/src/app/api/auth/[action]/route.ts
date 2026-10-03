@@ -9,8 +9,33 @@ const actions: Record<string, string> = {
   login: "auth/login", register: "auth/register", activate: "auth/activate",
   "forgot-password": "auth/forgot-password", "reset-password": "auth/reset-password",
   "change-password": "auth/change-password", logout: "auth/logout-session", "logout-all": "auth/logout-all",
-  refresh: "auth/refresh", profile: "me"
+  refresh: "auth/refresh", profile: "me", onboarding: "me/onboarding"
 };
+const studentActions: Record<string, string> = {
+  consent: "consent", "consent-history": "consent/history", "withdraw-consent": "consent",
+  privacy: "privacy", records: "records", conversations: "conversations", trends: "trends",
+  "data-controls": "data-controls", conversation: "conversations", "support-request": "support-requests"
+};
+async function studentPath(action: string, request: NextRequest, token: string | undefined) {
+  if (!token || !studentActions[action]) return null;
+  const profile = await fetch(`${origin()}/api/v1/me`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000) });
+  if (!profile.ok) return null;
+  const user = await profile.json();
+  if (typeof user.id !== "string" || !/^[0-9a-f-]{36}$/i.test(user.id)) return null;
+  let path = `students/${user.id}/${studentActions[action]}`;
+  if (action === "conversation") {
+    const id = request.nextUrl.searchParams.get("id") ?? "";
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+    return `conversations/${id}`;
+  }
+  if (action === "records") {
+    const category = request.nextUrl.searchParams.get("category") ?? "conversations";
+    if (!["conversations", "analysis", "research", "consent_audit"].includes(category)) return null;
+    const offset = Math.max(0, Math.min(100000, Number(request.nextUrl.searchParams.get("offset") ?? 0) || 0));
+    path += `?category=${category}&offset=${Math.floor(offset)}`;
+  }
+  return path;
+}
 
 function clear(response: NextResponse) {
   for (const name of [accessCookie, refreshCookie]) response.cookies.set(name, "", { ...options, maxAge: 0 });
@@ -21,8 +46,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ac
   const expected = process.env.AUTH_PUBLIC_URL ?? request.nextUrl.origin;
   if (request.headers.get("origin") !== expected) return NextResponse.json({ detail: "Access denied" }, { status: 403 });
   const { action } = await context.params;
-  const path = actions[action];
-  if (!path) return NextResponse.json({ detail: "Not found" }, { status: 404 });
+  let path = actions[action];
+  if (!path && !studentActions[action]) return NextResponse.json({ detail: "Not found" }, { status: 404 });
+  if (["privacy", "records", "conversations", "trends", "consent-history", "onboarding", "conversation"].includes(action)) return NextResponse.json({ detail: "Method not allowed" }, { status: 405 });
   if (Number(request.headers.get("content-length") ?? 0) > 8192) return NextResponse.json({ detail: "Request too large" }, { status: 413 });
   let body;
   try {
@@ -36,10 +62,15 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ac
     const response = NextResponse.json({ message: "Signed out" }); clear(response); return response;
   }
   try {
+    if (!path) {
+      const derived = await studentPath(action, request, token);
+      if (!derived) return NextResponse.json({ detail: "Please sign in" }, { status: 401 });
+      path = derived;
+    }
     const upstream = await fetch(`${origin()}/api/v1/${path}`, {
-      method: action === "profile" ? "PATCH" : "POST", cache: "no-store",
+      method: action === "profile" ? "PATCH" : action === "consent" ? "PUT" : action === "withdraw-consent" ? "DELETE" : "POST", cache: "no-store",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify(body), signal: AbortSignal.timeout(15000)
+      body: action === "withdraw-consent" ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(15000)
     });
     const payload = upstream.status === 204 ? {} : await upstream.json();
     const issued = upstream.ok && (action === "login" || action === "refresh");
@@ -57,11 +88,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ac
 }
 
 export async function GET(request: NextRequest, context: { params: Promise<{ action: string }> }) {
-  if ((await context.params).action !== "profile") return NextResponse.json({ detail: "Not found" }, { status: 404 });
+  const { action } = await context.params;
+  if (!["profile", "onboarding", "consent", "consent-history", "privacy", "records", "conversations", "trends", "data-controls", "conversation"].includes(action)) return NextResponse.json({ detail: "Not found" }, { status: 404 });
   const token = request.cookies.get(accessCookie)?.value;
   if (!token) return NextResponse.json({ detail: "Please sign in" }, { status: 401 });
   try {
-    const upstream = await fetch(`${origin()}/api/v1/me`, { cache: "no-store",
+    const path = actions[action] ?? await studentPath(action, request, token);
+    if (!path) return NextResponse.json({ detail: "Please sign in" }, { status: 401 });
+    const upstream = await fetch(`${origin()}/api/v1/${path}`, { cache: "no-store",
       headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000) });
     return NextResponse.json(await upstream.json(), { status: upstream.status, headers: { "Cache-Control": "no-store" } });
   } catch { return NextResponse.json({ detail: "Service temporarily unavailable" }, { status: 503 }); }
