@@ -4,7 +4,7 @@ from copy import deepcopy
 from hashlib import sha256
 from urllib.parse import urlsplit
 
-POLICY_VERSION = "2026-10-08.4"
+POLICY_VERSION = "2026-10-08.5"
 DISCLOSURES = [
     {
         "title": "Purpose",
@@ -52,6 +52,7 @@ DISCLOSURES = [
 def policy_document():
     from app.audio_analysis import disclosure as audio_disclosure
     from app.config import get_settings
+    from app.longitudinal import disclosure as longitudinal_disclosure
     from app.multimodal_fusion import disclosure as fusion_disclosure
     from app.text_analysis import disclosure
     from app.visual_analysis import disclosure as visual_disclosure
@@ -76,6 +77,12 @@ def policy_document():
     audio_processing = audio_disclosure()
     visual_processing = visual_disclosure()
     fusion_processing = fusion_disclosure()
+    longitudinal_processing = longitudinal_disclosure()
+    disclosures[5]["text"] += (
+        " With your separate tracking permission, experimental daily and weekly summaries compare "
+        "model observations with your own prior history. Insufficient history and gaps are shown explicitly. "
+        "These trends do not define a mental-health score, and negative sentiment is not a diagnosis or crisis finding."
+    )
     disclosures[1]["text"] += (
         " Optional experimental multimodal fusion combines selected existing analysis summaries only "
         "from modalities you currently permit. Missing or refused inputs remain optional. Fusion weights "
@@ -112,4 +119,5 @@ def policy_document():
         "audio_analysis_processing": audio_processing,
         "visual_analysis_processing": visual_processing,
         "multimodal_fusion_processing": fusion_processing,
+        "longitudinal_processing": longitudinal_processing,
     }

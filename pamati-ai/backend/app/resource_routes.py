@@ -270,6 +270,7 @@ def trends(student_id: str, db: DB, user: CurrentUser):
             ),
         }
         for t in rows
+        if t.summary.get("schema_version") != "longitudinal-observation-v1"
     ]
     audit(db, user.id, "trend.read", "student", student_id)
     db.commit()

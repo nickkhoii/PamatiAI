@@ -14,6 +14,7 @@ const actions: Record<string, string> = {
 const studentActions: Record<string, string> = {
   consent: "consent", "consent-history": "consent/history", "withdraw-consent": "consent",
   privacy: "privacy", records: "records", conversations: "conversations", trends: "trends",
+  longitudinal: "longitudinal",
   "data-controls": "data-controls", conversation: "conversations", "chat-turn": "conversations", "new-conversation": "conversations", "hide-conversation": "conversations", "support-request": "support-requests"
 };
 async function studentPath(action: string, request: NextRequest, token: string | undefined) {
@@ -22,7 +23,10 @@ async function studentPath(action: string, request: NextRequest, token: string |
   if (!profile.ok) return null;
   const user = await profile.json();
   if (typeof user.id !== "string" || !/^[0-9a-f-]{36}$/i.test(user.id)) return null;
-  let path = `students/${user.id}/${studentActions[action]}`;
+  const target = action === "longitudinal" ? request.nextUrl.searchParams.get("student") ?? user.id : user.id;
+  if (!/^[0-9a-f-]{36}$/i.test(target)) return null;
+  // The backend independently enforces ownership or active reviewer assignment and consent.
+  let path = `students/${target}/${studentActions[action]}`;
   if (["conversation", "chat-turn", "hide-conversation"].includes(action)) {
     const id = request.nextUrl.searchParams.get("id") ?? "";
     if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
@@ -90,7 +94,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ac
 
 export async function GET(request: NextRequest, context: { params: Promise<{ action: string }> }) {
   const { action } = await context.params;
-  if (!["profile", "onboarding", "consent", "consent-history", "privacy", "records", "conversations", "trends", "data-controls", "conversation"].includes(action)) return NextResponse.json({ detail: "Not found" }, { status: 404 });
+  if (!["profile", "onboarding", "consent", "consent-history", "privacy", "records", "conversations", "trends", "longitudinal", "data-controls", "conversation"].includes(action)) return NextResponse.json({ detail: "Not found" }, { status: 404 });
   const token = request.cookies.get(accessCookie)?.value;
   if (!token) return NextResponse.json({ detail: "Please sign in" }, { status: 401 });
   try {

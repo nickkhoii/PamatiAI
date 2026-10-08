@@ -26,6 +26,8 @@ Next.js/React/TypeScript/Tailwind shell with real service status; FastAPI livene
 
 Experimental multimodal fusion combines explicitly selected, consented analysis records through the API, with late fusion, compatible weighted probability fusion and a learned-strategy interface. See [MULTIMODAL_FUSION](docs/MULTIMODAL_FUSION.md) for configuration, provenance and scientific limitations.
 
+Longitudinal tracking provides interaction, daily and weekly summaries, rolling personal baselines, trajectories and configurable experimental change indicators. Student records and assigned reviewer trend views show gaps and uncertainty without diagnostic scores. See [LONGITUDINAL_ANALYSIS](docs/LONGITUDINAL_ANALYSIS.md) for mathematical definitions, consent and configuration.
+
 Authentication, institutional onboarding, informed consent, student privacy views, protected student/counselor/administrator APIs and conversational message submission are implemented. A compatible HTTP model adapter is available with mocked validation; no real model deployment has been evaluated. Domain notifications, physical erasure/export fulfillment and full staff workspaces remain planned. Institutional governance and operational integrations must be validated before onboarding real participants.
 
 ## Docker development

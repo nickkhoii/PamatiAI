@@ -22,3 +22,8 @@ combine existing consented summaries. See [MULTIMODAL_FUSION](../docs/MULTIMODAL
 No automatic
 model downloads or clinical classifiers are included. See docs/AI_SAFETY.md for
 consent and evaluation requirements.
+
+`longitudinal/` implements replaceable interaction/day/week summaries, prior-history
+rolling baselines, trajectories and configurable descriptive change/persistence rules.
+Methods are experimental and do not define a mental-health score. See
+[LONGITUDINAL_ANALYSIS](../docs/LONGITUDINAL_ANALYSIS.md).
