@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 const choices = [
   ["text_processing", "Text analysis", "Needed for AI conversational functionality. Leave it off to use privacy controls and request human support without AI analysis."],
   ["audio_processing", "Audio analysis ? optional", "Permit speech and vocal-feature analysis when that feature becomes available. This does not turn on your microphone or permit raw recording retention."],
-  ["visual_processing", "Visual analysis ? optional", "Permit optional visual samples when that feature becomes available. This does not turn on your camera, permit facial identification or permit raw recording retention."],
+  ["visual_processing", "Visual analysis ? optional", "Permit explicit visual uploads for research observations of expression. This does not turn on your camera, identify you, infer protected attributes or establish your internal mental state. Raw visual media is not retained. You can continue using text without visual processing."],
   ["longitudinal_tracking", "Longitudinal tracking ? optional", "Permit summaries of sentiment patterns over time. You can use conversational features without tracking."],
   ["research_data_use", "Research use ? optional", "Permit separately approved, de-identified research use. This is independent of access to support."],
   ["reviewer_access", "Assigned counselor access ? optional", "Permit an assigned counselor to review your conversations, trends and support signals. Human review is not immediate or continuous."]

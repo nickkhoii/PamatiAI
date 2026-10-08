@@ -20,6 +20,16 @@ class Settings(BaseSettings):
     smtp_password: str = Field(default="", repr=False)
     smtp_from: str = ""
     allow_raw_media_storage: bool = False
+    visual_analysis_enabled: bool = False
+    visual_feature_extractor: str = Field(default="no-expression", min_length=1, max_length=180)
+    visual_analysis_model: str = Field(default="no-expression", min_length=1, max_length=180)
+    visual_analysis_minimum_confidence: float = Field(default=0.0, ge=0, le=1)
+    visual_max_bytes: int = Field(default=3_000_000, ge=1024, le=3_000_000)
+    visual_max_pixels: int = Field(default=262_144, ge=1, le=262_144)
+    visual_max_input_frames: int = Field(default=32, ge=1, le=32)
+    visual_sample_count: int = Field(default=8, ge=1, le=8)
+    visual_max_seconds: float = Field(default=30.0, ge=0.0, le=30.0)
+    visual_temporary_directory: str = ""
     audio_analysis_enabled: bool = False
     audio_analysis_model: str = Field(default="acoustic-features", min_length=1, max_length=180)
     audio_analysis_minimum_confidence: float = Field(default=0.0, ge=0, le=1)

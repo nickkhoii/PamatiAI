@@ -4,7 +4,7 @@ from copy import deepcopy
 from hashlib import sha256
 from urllib.parse import urlsplit
 
-POLICY_VERSION = "2026-10-08.2"
+POLICY_VERSION = "2026-10-08.3"
 DISCLOSURES = [
     {
         "title": "Purpose",
@@ -53,6 +53,7 @@ def policy_document():
     from app.audio_analysis import disclosure as audio_disclosure
     from app.config import get_settings
     from app.text_analysis import disclosure
+    from app.visual_analysis import disclosure as visual_disclosure
 
     settings = get_settings()
     processing = {
@@ -72,6 +73,7 @@ def policy_document():
     )
     text_processing = disclosure()
     audio_processing = audio_disclosure()
+    visual_processing = visual_disclosure()
     disclosures[1]["text"] += (
         " Current text-analysis models on the PamatiAI server: "
         + (", ".join(f"{m['identifier']} version {m['version']}" for m in text_processing["models"])
@@ -86,10 +88,20 @@ def policy_document():
            if audio_processing["enabled"] else "disabled")
         + ". Raw retention additionally requires your separate recording-retention permission."
     )
+    disclosures[5]["text"] += (
+        " Visual uploads are completely optional and require separate visual-processing consent. "
+        "Refusing visual processing does not restrict text-based support. No visual recordings are retained. "
+        "Expression estimates do not directly reveal internal mental states; visual processing does not "
+        "identify students, infer protected attributes or diagnose psychiatric conditions. Current visual processor: "
+        + (f"{visual_processing['model']} version {visual_processing['model_version']} on the PamatiAI server"
+           if visual_processing["enabled"] else "disabled")
+        + "."
+    )
     return {
         "version": POLICY_VERSION,
         "disclosures": disclosures,
         "conversation_processing": processing,
         "text_analysis_processing": text_processing if text_processing["models"] else {"models": []},
         "audio_analysis_processing": audio_processing,
+        "visual_analysis_processing": visual_processing,
     }

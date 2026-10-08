@@ -130,14 +130,16 @@ def run_analysis(db, inference_id, adapter, payload_references):
             fusion_strategy_version=row.adapter_version,
             missing_modalities=[m for m in ("text", "audio", "visual") if m not in inputs],
         )
-    if row.modality in {"text", "audio"} and hasattr(result, "uncertainty"):
+    if row.modality in {"text", "audio", "visual"} and hasattr(result, "uncertainty"):
         row.confidence = result.confidence
         row.uncertainty = result.uncertainty
         row.uncertainty_method = result.uncertainty_method
         if row.modality == "text":
             values["language"] = result.language
-        else:
+        elif row.modality == "audio":
             values["duration_seconds"] = result.duration_seconds
+        else:
+            values["sampled_frame_count"] = result.sampled_frame_count
     db.flush()
     db.add(classes[row.modality](**values))
     audit(db, None, "processing.completed", "inference", row.id)

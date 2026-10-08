@@ -10,6 +10,11 @@ See [TEXT_ANALYSIS](../docs/TEXT_ANALYSIS.md) for configuration, outputs and lim
 replaceable model adapters and temporary-file cleanup. Derived features can be stored
 independently of raw recordings. See [AUDIO_ANALYSIS](../docs/AUDIO_ANALYSIS.md).
 
-Optional visual processing and fusion remain contracts only. No automatic
+`visual/` implements explicitly consented, bounded image/frame-sequence processing,
+replaceable observable-expression interfaces and temporary cleanup. It is disabled by
+default; the baseline reports technical frame quality and abstains from expression
+inference. Raw visual media is never retained. See [VISUAL_ANALYSIS](../docs/VISUAL_ANALYSIS.md).
+
+Fusion remains contracts only. No automatic
 model downloads or clinical classifiers are included. See docs/AI_SAFETY.md for
 consent and evaluation requirements.

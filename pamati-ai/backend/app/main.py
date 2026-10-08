@@ -15,6 +15,7 @@ from app.conversation_routes import router as conversation_router
 from app.db import engine
 from app.privacy_routes import router as privacy_router
 from app.resource_routes import router as resource_router
+from app.visual_routes import router as visual_router
 
 
 @asynccontextmanager
@@ -36,6 +37,7 @@ app.include_router(resource_router)
 app.include_router(privacy_router)
 app.include_router(conversation_router)
 app.include_router(audio_router)
+app.include_router(visual_router)
 
 
 @app.middleware("http")

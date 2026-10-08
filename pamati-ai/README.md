@@ -6,6 +6,11 @@ Production-oriented research prototype foundation for higher-education student s
 
 ## What works now
 
+Optional visual research architecture provides bounded image/frame sampling, replaceable
+observable-expression adapters, consent checks and temporary cleanup. It defaults to
+disabled, retains no raw images/video, and does not restrict text support when declined.
+See [VISUAL_ANALYSIS](docs/VISUAL_ANALYSIS.md) for scope and scientific limitations.
+
 Optional audio research analysis supports bounded WAV uploads, acoustic feature summaries,
 replaceable emotion adapters and independent raw-retention controls. It defaults to disabled
 and requires separate informed audio consent. See [AUDIO_ANALYSIS](docs/AUDIO_ANALYSIS.md).
