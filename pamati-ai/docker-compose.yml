@@ -37,6 +37,8 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-}
       ALLOW_RAW_MEDIA_STORAGE: ${ALLOW_RAW_MEDIA_STORAGE:-false}
+      TEXT_ANALYSIS_MODELS: '${TEXT_ANALYSIS_MODELS:-[]}'
+      TEXT_ANALYSIS_MINIMUM_CONFIDENCE: ${TEXT_ANALYSIS_MINIMUM_CONFIDENCE:-0.0}
       CORS_ORIGINS: '["http://localhost:3000"]'
       ALLOWED_HOSTS: '["localhost","127.0.0.1","backend"]'
     depends_on:

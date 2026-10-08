@@ -20,6 +20,16 @@ class Settings(BaseSettings):
     smtp_password: str = Field(default="", repr=False)
     smtp_from: str = ""
     allow_raw_media_storage: bool = False
+    text_analysis_models: list[str] = []
+    text_analysis_minimum_confidence: float = Field(default=0.0, ge=0, le=1)
+
+    @field_validator("text_analysis_models")
+    @classmethod
+    def distinct_text_models(cls, value):
+        if len(value) > 8 or len(value) != len(set(value)) or any(not name for name in value):
+            raise ValueError("Select up to eight distinct registered text models")
+        return value
+
     conversation_provider: Literal["local-support", "compatible-http"] = "local-support"
     conversation_endpoint: str = Field(default="", max_length=2048)
     conversation_model: str = Field(default="", max_length=160)

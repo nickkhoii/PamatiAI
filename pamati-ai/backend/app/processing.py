@@ -10,6 +10,7 @@ from app.auth_dependencies import audit
 from app.models import (
     AudioAnalysis,
     InteractionSession,
+    Message,
     ModelInference,
     MultimodalAnalysis,
     TextAnalysis,
@@ -31,6 +32,10 @@ def permitted_job(db, row):
     receipt = current_consent(db, row.student_id)
     interaction = db.get(InteractionSession, row.session_id)
     inputs = row.input_modalities
+    if row.message_id:
+        message = db.get(Message, row.message_id, populate_existing=True)
+        if not message or message.deleted_at:
+            raise ConsentDenied("Message is unavailable")
     if inputs is None and row.modality != "multimodal":
         inputs = [row.modality]  # Legacy single-modality jobs are still explicit.
     if (
@@ -108,7 +113,6 @@ def run_analysis(db, inference_id, adapter, payload_references):
         ("abstained" if getattr(result, "abstained", False) else "completed"),
         utcnow(),
     )
-    db.flush()
     classes = {
         "text": TextAnalysis,
         "audio": AudioAnalysis,
@@ -126,6 +130,12 @@ def run_analysis(db, inference_id, adapter, payload_references):
             fusion_strategy_version=row.adapter_version,
             missing_modalities=[m for m in ("text", "audio", "visual") if m not in inputs],
         )
+    if row.modality == "text" and hasattr(result, "uncertainty"):
+        row.confidence = result.confidence
+        row.uncertainty = result.uncertainty
+        row.uncertainty_method = result.uncertainty_method
+        values["language"] = result.language
+    db.flush()
     db.add(classes[row.modality](**values))
     audit(db, None, "processing.completed", "inference", row.id)
     db.commit()

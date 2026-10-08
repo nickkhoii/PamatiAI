@@ -13,10 +13,12 @@ dev = ["pytest>=8,<10", "httpx>=0.28,<1", "ruff>=0.9,<1"]
 ml = ["transformers>=4.48,<5", "torch>=2.6,<3", "scikit-learn>=1.6,<2"]
 
 [tool.setuptools.packages.find]
-include = ["app*", "services*"]
+where = [".", ".."]
+include = ["app*", "services*", "ai*"]
 
 [tool.pytest.ini_options]
 testpaths = ["../tests/backend"]
+pythonpath = [".", ".."]
 
 [tool.ruff]
 target-version = "py312"

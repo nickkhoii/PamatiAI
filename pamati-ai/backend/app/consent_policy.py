@@ -4,7 +4,7 @@ from copy import deepcopy
 from hashlib import sha256
 from urllib.parse import urlsplit
 
-POLICY_VERSION = "2026-10-03.2"
+POLICY_VERSION = "2026-10-08.1"
 DISCLOSURES = [
     {
         "title": "Purpose",
@@ -51,6 +51,7 @@ DISCLOSURES = [
 
 def policy_document():
     from app.config import get_settings
+    from app.text_analysis import disclosure
 
     settings = get_settings()
     processing = {
@@ -68,8 +69,16 @@ def policy_document():
     disclosures[1]["text"] += (
         f" Current conversational processor: {processing['provider']} on {processing['host']}; model {processing['model']}, version {processing['version']}."
     )
+    text_processing = disclosure()
+    disclosures[1]["text"] += (
+        " Current text-analysis models on the PamatiAI server: "
+        + (", ".join(f"{m['identifier']} version {m['version']}" for m in text_processing["models"])
+           or "disabled")
+        + ". When enabled, each submitted student message is analyzed separately from replies."
+    )
     return {
         "version": POLICY_VERSION,
         "disclosures": disclosures,
         "conversation_processing": processing,
+        "text_analysis_processing": text_processing if text_processing["models"] else {"models": []},
     }

@@ -12,6 +12,7 @@ from app.auth_routes import Input
 from app.consent_policy import POLICY_VERSION, policy_document
 from app.models import Conversation, InteractionSession, Message, utcnow
 from app.persistence import ConsentDenied, current_consent
+from app.text_analysis import enqueue, execute, results
 from services.conversation.prompt import PROMPT_VERSION
 from services.conversation.providers import FALLBACK, safe_reply
 
@@ -53,11 +54,14 @@ def send_message(
         consent = current_consent(db, conversation.student_id)
         if not consent.text_processing:
             raise ConsentDenied("Text consent is required to send messages")
-        processing = policy_document()["conversation_processing"]
+        policy = policy_document()
+        processing = policy["conversation_processing"]
         if (
             consent.policy_version != POLICY_VERSION
             or not consent.disclosure_snapshot
             or consent.disclosure_snapshot.get("conversation_processing") != processing
+            or consent.disclosure_snapshot.get("text_analysis_processing", {"models": []})
+            != policy["text_analysis_processing"]
         ):
             raise ConsentDenied(
                 "Review the current consent information and conversational processor before sending"
@@ -156,6 +160,7 @@ def send_message(
     db.add_all([student, assistant])
     conversation.updated_at = utcnow()
     db.flush()
+    analysis_jobs = enqueue(db, student)
     context = list(
         db.scalars(
             select(Message)
@@ -179,6 +184,7 @@ def send_message(
     audit(db, user.id, "conversation.message_submitted", "conversation", conversation_id)
     db.commit()
     reply = safe_reply(messages)
+    execute(db, analysis_jobs)
     # Fresh locking reads defeat stale ORM state and MySQL repeatable-read snapshots.
     try:
         latest = current_consent(db, user.id)
@@ -233,3 +239,20 @@ def send_message(
             409, "Consent or conversation changed; the generated response was discarded"
         )
     return {"messages": [view(student), view(assistant)]}
+
+
+@router.get("/conversations/{conversation_id}/messages/{message_id}/analyses")
+def message_analyses(conversation_id: str, message_id: str, db: DB, user: CurrentUser):
+    conversation = db.get(Conversation, conversation_id)
+    if not conversation or conversation.deleted_at:
+        raise HTTPException(404, "Conversation not found")
+    authorize_student(db, user, "history:read", conversation.student_id)
+    message = db.get(Message, message_id)
+    session = db.get(InteractionSession, message.session_id) if message else None
+    if (not message or message.deleted_at or not session or session.deleted_at
+            or session.conversation_id != conversation_id):
+        raise HTTPException(404, "Message not found")
+    result = results(db, message_id)
+    audit(db, user.id, "text_analysis.read", "message", message_id)
+    db.commit()
+    return {"analyses": result}

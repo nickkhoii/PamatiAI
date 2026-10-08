@@ -6,6 +6,11 @@ Production-oriented research prototype foundation for higher-education student s
 
 ## What works now
 
+Modular text analysis supports multiple configured research models per student message,
+normalized sentiment/affect outputs, uncertainty and traceable database records.
+It is disabled by default; enable the offline comparator or register a reviewed adapter
+using [TEXT_ANALYSIS](docs/TEXT_ANALYSIS.md).
+
 Student chat at `/student/chat` includes conversation history, accessible text composition, consent status, privacy/settings links and human-support requests. The default uses local predefined support responses; a modular model adapter is available. Apply migration `0007_conversation` before launch. See [conversation behavior and provider configuration](docs/CONVERSATION.md).
 
 Next.js/React/TypeScript/Tailwind shell with real service status; FastAPI liveness and database readiness; normalized MySQL utf8mb4 schema with 37 domain/authentication tables; SQLAlchemy models and explicit Alembic migrations; consent-aware persistence helpers and database guards; Argon2id development seeds; tested least-privilege authorization policy; pluggable analysis contracts; Docker development services and dependency locks.
@@ -37,6 +42,7 @@ Copy-Item .env.example .env
 python -m venv .venv
 .venv/Scripts/python.exe -m pip install -r backend/requirements.lock
 cd backend
+$env:PYTHONPATH = (Resolve-Path ..).Path
 ../.venv/Scripts/python.exe -m uvicorn app.main:app --reload --port 8000
 ```
 
