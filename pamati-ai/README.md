@@ -22,7 +22,9 @@ using [TEXT_ANALYSIS](docs/TEXT_ANALYSIS.md).
 
 Student chat at `/student/chat` includes conversation history, accessible text composition, consent status, privacy/settings links and human-support requests. The default uses local predefined support responses; a modular model adapter is available. Apply migration `0007_conversation` before launch. See [conversation behavior and provider configuration](docs/CONVERSATION.md).
 
-Next.js/React/TypeScript/Tailwind shell with real service status; FastAPI liveness and database readiness; normalized MySQL utf8mb4 schema with 37 domain/authentication tables; SQLAlchemy models and explicit Alembic migrations; consent-aware persistence helpers and database guards; Argon2id development seeds; tested least-privilege authorization policy; pluggable analysis contracts; Docker development services and dependency locks.
+Next.js/React/TypeScript/Tailwind shell with real service status; FastAPI liveness and database readiness; normalized MySQL utf8mb4 schema with 37 domain/authentication tables; SQLAlchemy models and explicit Alembic migrations; consent-aware persistence helpers and database guards; Argon2id development seeds; tested least-privilege authorization policy; pluggable analysis pipelines; Docker development services and dependency locks.
+
+Experimental multimodal fusion combines explicitly selected, consented analysis records through the API, with late fusion, compatible weighted probability fusion and a learned-strategy interface. See [MULTIMODAL_FUSION](docs/MULTIMODAL_FUSION.md) for configuration, provenance and scientific limitations.
 
 Authentication, institutional onboarding, informed consent, student privacy views, protected student/counselor/administrator APIs and conversational message submission are implemented. A compatible HTTP model adapter is available with mocked validation; no real model deployment has been evaluated. Domain notifications, physical erasure/export fulfillment and full staff workspaces remain planned. Institutional governance and operational integrations must be validated before onboarding real participants.
 

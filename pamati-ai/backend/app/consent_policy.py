@@ -4,7 +4,7 @@ from copy import deepcopy
 from hashlib import sha256
 from urllib.parse import urlsplit
 
-POLICY_VERSION = "2026-10-08.3"
+POLICY_VERSION = "2026-10-08.4"
 DISCLOSURES = [
     {
         "title": "Purpose",
@@ -52,6 +52,7 @@ DISCLOSURES = [
 def policy_document():
     from app.audio_analysis import disclosure as audio_disclosure
     from app.config import get_settings
+    from app.multimodal_fusion import disclosure as fusion_disclosure
     from app.text_analysis import disclosure
     from app.visual_analysis import disclosure as visual_disclosure
 
@@ -74,6 +75,12 @@ def policy_document():
     text_processing = disclosure()
     audio_processing = audio_disclosure()
     visual_processing = visual_disclosure()
+    fusion_processing = fusion_disclosure()
+    disclosures[1]["text"] += (
+        " Optional experimental multimodal fusion combines selected existing analysis summaries only "
+        "from modalities you currently permit. Missing or refused inputs remain optional. Fusion weights "
+        "have not been empirically validated; combined observations are not clinical assessments."
+    )
     disclosures[1]["text"] += (
         " Current text-analysis models on the PamatiAI server: "
         + (", ".join(f"{m['identifier']} version {m['version']}" for m in text_processing["models"])
@@ -104,4 +111,5 @@ def policy_document():
         "text_analysis_processing": text_processing if text_processing["models"] else {"models": []},
         "audio_analysis_processing": audio_processing,
         "visual_analysis_processing": visual_processing,
+        "multimodal_fusion_processing": fusion_processing,
     }

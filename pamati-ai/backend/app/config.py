@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     smtp_password: str = Field(default="", repr=False)
     smtp_from: str = ""
     allow_raw_media_storage: bool = False
+    multimodal_fusion_enabled: bool = True
+    multimodal_fusion_strategy: str = "late-fusion"
+    multimodal_fusion_weights: dict[str, float] = {"text": 1.0, "audio": 1.0, "visual": 1.0}
+    multimodal_fusion_minimum_confidence: float = Field(default=0.0, ge=0, le=1)
+    multimodal_fusion_maximum_source_span_seconds: float = Field(default=300.0, ge=0, le=3600)
     visual_analysis_enabled: bool = False
     visual_feature_extractor: str = Field(default="no-expression", min_length=1, max_length=180)
     visual_analysis_model: str = Field(default="no-expression", min_length=1, max_length=180)

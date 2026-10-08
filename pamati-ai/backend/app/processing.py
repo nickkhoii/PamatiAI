@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from app.auth_dependencies import audit
 from app.models import (
     AudioAnalysis,
+    FusionInput,
     InteractionSession,
     Message,
     ModelInference,
@@ -103,6 +104,9 @@ def run_analysis(db, inference_id, adapter, payload_references):
         db.refresh(row, with_for_update=True)
         if row.processing_status != "running":
             raise ConsentDenied("Job was cancelled")
+        publication_check = getattr(type(adapter), "validate_publication", None)
+        if publication_check:
+            publication_check(adapter, db, row, result)
     except ConsentDenied:
         if row.processing_status in {"pending", "running"}:
             row.processing_status = "cancelled"
@@ -130,7 +134,7 @@ def run_analysis(db, inference_id, adapter, payload_references):
             fusion_strategy_version=row.adapter_version,
             missing_modalities=[m for m in ("text", "audio", "visual") if m not in inputs],
         )
-    if row.modality in {"text", "audio", "visual"} and hasattr(result, "uncertainty"):
+    if row.modality in {"text", "audio", "visual", "multimodal"} and hasattr(result, "uncertainty"):
         row.confidence = result.confidence
         row.uncertainty = result.uncertainty
         row.uncertainty_method = result.uncertainty_method
@@ -138,10 +142,15 @@ def run_analysis(db, inference_id, adapter, payload_references):
             values["language"] = result.language
         elif row.modality == "audio":
             values["duration_seconds"] = result.duration_seconds
-        else:
+        elif row.modality == "visual":
             values["sampled_frame_count"] = result.sampled_frame_count
     db.flush()
     db.add(classes[row.modality](**values))
+    if row.modality == "multimodal" and getattr(result, "source_inference_ids", ()):
+        db.flush()
+        for source_id in result.source_inference_ids:
+            db.add(FusionInput(fusion_inference_id=row.id, source_inference_id=source_id,
+                               student_id=row.student_id))
     audit(db, None, "processing.completed", "inference", row.id)
     db.commit()
     return row.id

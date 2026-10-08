@@ -15,6 +15,10 @@ replaceable observable-expression interfaces and temporary cleanup. It is disabl
 default; the baseline reports technical frame quality and abstains from expression
 inference. Raw visual media is never retained. See [VISUAL_ANALYSIS](../docs/VISUAL_ANALYSIS.md).
 
-Fusion remains contracts only. No automatic
+`multimodal/` implements experimental late and weighted probability fusion, a learned
+strategy interface, missing-input handling and source provenance. Explicit API requests
+combine existing consented summaries. See [MULTIMODAL_FUSION](../docs/MULTIMODAL_FUSION.md).
+
+No automatic
 model downloads or clinical classifiers are included. See docs/AI_SAFETY.md for
 consent and evaluation requirements.
