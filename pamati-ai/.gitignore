@@ -14,3 +14,4 @@ __pycache__/
 *.tsbuildinfo
 *.egg-info/
 coverage/
+private-audio/

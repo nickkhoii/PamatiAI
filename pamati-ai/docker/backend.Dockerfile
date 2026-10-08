@@ -9,6 +9,7 @@ COPY database /workspace/database
 COPY ai /workspace/ai
 COPY tests /workspace/tests
 RUN useradd --create-home --uid 10001 pamati
+RUN mkdir -p /workspace/private-audio /tmp/pamati-audio && chown pamati:pamati /workspace/private-audio /tmp/pamati-audio && chmod 700 /workspace/private-audio /tmp/pamati-audio
 USER pamati
 WORKDIR /workspace/backend
 EXPOSE 8000

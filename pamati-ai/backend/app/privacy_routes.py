@@ -51,6 +51,8 @@ def onboarding(db: DB, user: Student):
             and receipt.disclosure_snapshot.get("conversation_processing") == policy_document()["conversation_processing"]
             and receipt.disclosure_snapshot.get("text_analysis_processing", {"models": []})
             == policy_document()["text_analysis_processing"]
+            and receipt.disclosure_snapshot.get("audio_analysis_processing", {"enabled": False})
+            == policy_document()["audio_analysis_processing"]
         ),
         "raw_retention_enabled": False,
     }  # This onboarding UI never offers raw recording retention.

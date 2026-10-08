@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from app.audio_routes import router as audio_router
 from app.auth_routes import router as auth_router
 from app.config import get_settings
 from app.conversation_routes import router as conversation_router
@@ -34,6 +35,7 @@ app.include_router(auth_router)
 app.include_router(resource_router)
 app.include_router(privacy_router)
 app.include_router(conversation_router)
+app.include_router(audio_router)
 
 
 @app.middleware("http")

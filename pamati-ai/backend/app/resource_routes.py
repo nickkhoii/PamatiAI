@@ -151,7 +151,7 @@ def conversation(conversation_id: str, db: DB, user: CurrentUser,
     result = {
         "id": row.id,
         "status": row.status,
-        "messages": [{"id": m.id, "sender": m.sender, "text": m.text_content,
+        "messages": [{"id": m.id, "session_id": m.session_id, "sender": m.sender, "text": m.text_content,
                       "created_at": m.created_at, "generation": m.generation} for m in reversed(messages[:limit])],
         "next_offset": offset + limit if len(messages) > limit else None,
     }

@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     smtp_password: str = Field(default="", repr=False)
     smtp_from: str = ""
     allow_raw_media_storage: bool = False
+    audio_analysis_enabled: bool = False
+    audio_analysis_model: str = Field(default="acoustic-features", min_length=1, max_length=180)
+    audio_analysis_minimum_confidence: float = Field(default=0.0, ge=0, le=1)
+    audio_max_bytes: int = Field(default=3_000_000, ge=1024, le=3_000_000)
+    audio_max_seconds: float = Field(default=30.0, ge=0.04, le=30.0)
+    audio_temporary_directory: str = ""
+    audio_storage_directory: str = "../private-audio"
     text_analysis_models: list[str] = []
     text_analysis_minimum_confidence: float = Field(default=0.0, ge=0, le=1)
 

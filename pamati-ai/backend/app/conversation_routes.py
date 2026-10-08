@@ -34,6 +34,7 @@ class TurnInput(Input):
 def view(message):
     return {
         "id": message.id,
+        "session_id": message.session_id,
         "sender": message.sender,
         "text": message.text_content,
         "created_at": message.created_at,

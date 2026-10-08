@@ -6,6 +6,10 @@ student messages through consent-aware backend persistence. Analysis is disabled
 default; the supplied offline English lexicon is an unvalidated research comparator.
 See [TEXT_ANALYSIS](../docs/TEXT_ANALYSIS.md) for configuration, outputs and limitations.
 
-Speech, optional visual processing and fusion remain contracts only. No automatic
+`audio/` implements explicitly consented WAV uploads, versioned acoustic summaries,
+replaceable model adapters and temporary-file cleanup. Derived features can be stored
+independently of raw recordings. See [AUDIO_ANALYSIS](../docs/AUDIO_ANALYSIS.md).
+
+Optional visual processing and fusion remain contracts only. No automatic
 model downloads or clinical classifiers are included. See docs/AI_SAFETY.md for
 consent and evaluation requirements.

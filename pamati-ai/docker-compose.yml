@@ -39,6 +39,13 @@ services:
       ALLOW_RAW_MEDIA_STORAGE: ${ALLOW_RAW_MEDIA_STORAGE:-false}
       TEXT_ANALYSIS_MODELS: '${TEXT_ANALYSIS_MODELS:-[]}'
       TEXT_ANALYSIS_MINIMUM_CONFIDENCE: ${TEXT_ANALYSIS_MINIMUM_CONFIDENCE:-0.0}
+      AUDIO_ANALYSIS_ENABLED: ${AUDIO_ANALYSIS_ENABLED:-false}
+      AUDIO_ANALYSIS_MODEL: ${AUDIO_ANALYSIS_MODEL:-acoustic-features}
+      AUDIO_ANALYSIS_MINIMUM_CONFIDENCE: ${AUDIO_ANALYSIS_MINIMUM_CONFIDENCE:-0.0}
+      AUDIO_MAX_BYTES: ${AUDIO_MAX_BYTES:-3000000}
+      AUDIO_MAX_SECONDS: ${AUDIO_MAX_SECONDS:-30.0}
+      AUDIO_TEMPORARY_DIRECTORY: /tmp/pamati-audio
+      AUDIO_STORAGE_DIRECTORY: /workspace/private-audio
       CORS_ORIGINS: '["http://localhost:3000"]'
       ALLOWED_HOSTS: '["localhost","127.0.0.1","backend"]'
     depends_on:
@@ -54,6 +61,7 @@ services:
     ports: ["127.0.0.1:8000:8000"]
     volumes:
       - ./backend/app:/workspace/backend/app:ro
+      - audio_recordings:/workspace/private-audio
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -85,6 +93,7 @@ services:
     networks: [web]
 volumes:
   mysql_data:
+  audio_recordings:
 networks:
   web:
   data:

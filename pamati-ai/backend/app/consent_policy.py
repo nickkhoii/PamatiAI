@@ -4,7 +4,7 @@ from copy import deepcopy
 from hashlib import sha256
 from urllib.parse import urlsplit
 
-POLICY_VERSION = "2026-10-08.1"
+POLICY_VERSION = "2026-10-08.2"
 DISCLOSURES = [
     {
         "title": "Purpose",
@@ -50,6 +50,7 @@ DISCLOSURES = [
 
 
 def policy_document():
+    from app.audio_analysis import disclosure as audio_disclosure
     from app.config import get_settings
     from app.text_analysis import disclosure
 
@@ -70,15 +71,25 @@ def policy_document():
         f" Current conversational processor: {processing['provider']} on {processing['host']}; model {processing['model']}, version {processing['version']}."
     )
     text_processing = disclosure()
+    audio_processing = audio_disclosure()
     disclosures[1]["text"] += (
         " Current text-analysis models on the PamatiAI server: "
         + (", ".join(f"{m['identifier']} version {m['version']}" for m in text_processing["models"])
            or "disabled")
         + ". When enabled, each submitted student message is analyzed separately from replies."
     )
+    disclosures[5]["text"] += (
+        " Optional audio uploads are analyzed only with active audio-processing consent. "
+        "Derived acoustic features can be stored without retaining recordings. "
+        "Voice features do not establish a psychiatric diagnosis. Current audio processor: "
+        + (f"{audio_processing['model']} version {audio_processing['model_version']} on the PamatiAI server"
+           if audio_processing["enabled"] else "disabled")
+        + ". Raw retention additionally requires your separate recording-retention permission."
+    )
     return {
         "version": POLICY_VERSION,
         "disclosures": disclosures,
         "conversation_processing": processing,
         "text_analysis_processing": text_processing if text_processing["models"] else {"models": []},
+        "audio_analysis_processing": audio_processing,
     }

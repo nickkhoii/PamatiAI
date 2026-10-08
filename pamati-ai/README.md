@@ -6,6 +6,10 @@ Production-oriented research prototype foundation for higher-education student s
 
 ## What works now
 
+Optional audio research analysis supports bounded WAV uploads, acoustic feature summaries,
+replaceable emotion adapters and independent raw-retention controls. It defaults to disabled
+and requires separate informed audio consent. See [AUDIO_ANALYSIS](docs/AUDIO_ANALYSIS.md).
+
 Modular text analysis supports multiple configured research models per student message,
 normalized sentiment/affect outputs, uncertainty and traceable database records.
 It is disabled by default; enable the offline comparator or register a reviewed adapter
