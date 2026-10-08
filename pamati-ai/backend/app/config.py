@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     smtp_password: str = Field(default="", repr=False)
     smtp_from: str = ""
     allow_raw_media_storage: bool = False
+    safety_policy: dict = {}
+    safety_resources: list[dict] = []
     longitudinal_algorithm: str = "descriptive-personal-trends"
     longitudinal_configuration: dict = {}
     multimodal_fusion_enabled: bool = True

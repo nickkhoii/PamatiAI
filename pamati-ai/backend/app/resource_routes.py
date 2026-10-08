@@ -56,8 +56,9 @@ class DataInput(Input):
 
 
 class ReviewInput(Input):
-    decision: Literal["acknowledge", "dismiss", "follow_up", "refer"]
+    decision: Literal["acknowledge", "dismiss", "follow_up", "refer", "resolve", "reopen"]
     notes: str | None = Field(default=None, max_length=10000)
+    expected_revision: int | None = Field(default=None, ge=1)
 
 
 class ReferralInput(Input):
@@ -67,6 +68,7 @@ class ReferralInput(Input):
 
 class ReferralState(Input):
     status: Literal["offered", "accepted", "declined", "closed"]
+    notes: str | None = Field(default=None, max_length=10000)
 
 
 class AssignmentInput(Input):
@@ -339,6 +341,7 @@ def data_requests(student_id: str, db: DB, user: CurrentUser):
 
 @router.get("/students/{student_id}/safety-signals")
 def signals(student_id: str, db: DB, user: CurrentUser):
+    from app.safety import signal_view, source_live
     authorize_student(db, user, "review:manage", student_id)
     rows = db.scalars(
         select(RiskSignal)
@@ -346,8 +349,9 @@ def signals(student_id: str, db: DB, user: CurrentUser):
         .limit(100)
     )
     result = [
-        {"id": r.id, "priority": r.priority, "status": r.status, "explanation": r.explanation}
+        signal_view(r)
         for r in rows
+        if source_live(db, r)
     ]
     audit(db, user.id, "safety.read", "student", student_id)
     db.commit()
@@ -356,31 +360,23 @@ def signals(student_id: str, db: DB, user: CurrentUser):
 
 @router.post("/safety-signals/{signal_id}/reviews", status_code=201)
 def review(signal_id: str, body: ReviewInput, db: DB, user: CurrentUser):
-    signal = db.get(RiskSignal, signal_id)
-    if not signal or signal.deleted_at:
-        raise HTTPException(404, "Signal not found")
-    authorize_student(db, user, "review:manage", signal.student_id)
-    row = HumanReview(
-        student_id=signal.student_id,
-        risk_signal_id=signal.id,
-        reviewer_id=user.id,
-        **body.model_dump(),
-    )
-    db.add(row)
-    db.flush()
-    audit(db, user.id, "review.created", "human_review", row.id)
+    from app.safety import review_action
+    row, signal = review_action(db, user, signal_id, **body.model_dump())
     db.commit()
-    return {"id": row.id}
+    return {"id": row.id, "workflow_state": signal.workflow_state, "revision": signal.revision}
 
 
 @router.get("/students/{student_id}/reviews")
 def reviews(student_id: str, db: DB, user: CurrentUser):
+    from app.safety import source_live
     authorize_student(db, user, "review:manage", student_id)
     result = [
-        {"id": r.id, "decision": r.decision, "notes": r.notes}
+        {"id": r.id, "decision": r.decision, "notes": r.notes, "timestamp": r.created_at,
+         "workflow_from": r.workflow_from, "workflow_to": r.workflow_to}
         for r in db.scalars(
             select(HumanReview).where(HumanReview.student_id == student_id).limit(100)
         )
+        if source_live(db, r.risk_signal)
     ]
     audit(db, user.id, "review.read", "student", student_id)
     db.commit()
@@ -390,13 +386,8 @@ def reviews(student_id: str, db: DB, user: CurrentUser):
 @router.post("/students/{student_id}/referrals", status_code=201)
 def referral(student_id: str, body: ReferralInput, db: DB, user: CurrentUser):
     authorize_student(db, user, "review:manage", student_id)
-    review = db.get(HumanReview, body.human_review_id)
-    if not review or review.student_id != student_id:
-        raise HTTPException(404, "Review not found")
-    row = ReferralRecord(student_id=student_id, **body.model_dump())
-    db.add(row)
-    db.flush()
-    audit(db, user.id, "referral.created", "referral", row.id)
+    from app.safety import offer_referral
+    row = offer_referral(db, user, student_id, body.human_review_id, body.service_reference)
     db.commit()
     return {"id": row.id, "status": row.status}
 
@@ -423,6 +414,19 @@ def referral_status(referral_id: str, body: ReferralState, db: DB, user: Current
     if not row or row.deleted_at:
         raise HTTPException(404, "Referral not found")
     authorize_student(db, user, "review:manage", row.student_id)
+    from app.safety import authorized_signal
+    review = db.get(HumanReview, row.human_review_id)
+    signal = authorized_signal(db, user, review.risk_signal_id)
+    if signal.source_message_id and body.status != "closed":
+        raise HTTPException(422, "The student records acceptance or refusal; reviewers may close an offer")
+    if signal.source_message_id:
+        if signal.assigned_reviewer_id != user.id or not body.notes or not body.notes.strip():
+            raise HTTPException(422, "The handling reviewer must document why the offer is closed")
+        db.add(HumanReview(student_id=signal.student_id, risk_signal_id=signal.id, reviewer_id=user.id,
+                           decision="follow_up", notes=body.notes, workflow_from=signal.workflow_state,
+                           workflow_to=signal.workflow_state, signal_revision=signal.revision + 1))
+        signal.revision += 1
+    db.refresh(row, with_for_update=True)
     row.status = body.status
     audit(db, user.id, "referral.updated", "referral", row.id)
     db.commit()

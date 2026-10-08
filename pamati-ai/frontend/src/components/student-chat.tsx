@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { SafetyContacts } from "./safety-contacts";
 
 type Generation = { status: string; provider?: string; model?: string; version?: string; prompt_version?: string };
 type Message = { id: string; sender: string; text: string | null; generation?: Generation | null };
@@ -153,6 +154,7 @@ export function StudentChat() {
         <div className="mx-auto max-w-3xl space-y-3"><h2 className="font-semibold">Human help is available outside this chat</h2>
           <p className="text-sm">For immediate danger, contact local emergency services or visit the nearest emergency department. If possible, ask a trusted person to stay with you. PamatiAI cannot dispatch help, and this chat is not continuously monitored.</p>
           <p className="text-sm">For campus support, contact your student affairs or counseling office. A request here is recorded for institutional follow-up; availability and response times vary.</p>
+          <SafetyContacts />
           <button disabled={supportBusy} onClick={requestSupport} className="rounded-lg border border-teal-800 px-4 py-2 text-sm disabled:opacity-50">{supportBusy ? "Recording request…" : "Request human support"}</button>
           <p role="status" className="text-sm">{supportNotice}</p><button onClick={() => setHelp(false)} className="text-sm underline">Close help</button>
         </div>

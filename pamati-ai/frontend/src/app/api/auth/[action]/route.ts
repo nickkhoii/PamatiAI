@@ -9,12 +9,14 @@ const actions: Record<string, string> = {
   login: "auth/login", register: "auth/register", activate: "auth/activate",
   "forgot-password": "auth/forgot-password", "reset-password": "auth/reset-password",
   "change-password": "auth/change-password", logout: "auth/logout-session", "logout-all": "auth/logout-all",
-  refresh: "auth/refresh", profile: "me", onboarding: "me/onboarding"
+  refresh: "auth/refresh", profile: "me", onboarding: "me/onboarding",
+  "safety-queue": "reviewer/safety-queue", "safety-resources": "safety/resources"
 };
 const studentActions: Record<string, string> = {
   consent: "consent", "consent-history": "consent/history", "withdraw-consent": "consent",
   privacy: "privacy", records: "records", conversations: "conversations", trends: "trends",
   longitudinal: "longitudinal",
+  "safety-referral": "referrals", "safety-follow-ups": "safety-follow-ups", "safety-choice": "safety-follow-ups",
   "data-controls": "data-controls", conversation: "conversations", "chat-turn": "conversations", "new-conversation": "conversations", "hide-conversation": "conversations", "support-request": "support-requests"
 };
 async function studentPath(action: string, request: NextRequest, token: string | undefined) {
@@ -23,10 +25,14 @@ async function studentPath(action: string, request: NextRequest, token: string |
   if (!profile.ok) return null;
   const user = await profile.json();
   if (typeof user.id !== "string" || !/^[0-9a-f-]{36}$/i.test(user.id)) return null;
-  const target = action === "longitudinal" ? request.nextUrl.searchParams.get("student") ?? user.id : user.id;
+  const target = ["longitudinal", "safety-referral"].includes(action) ? request.nextUrl.searchParams.get("student") ?? user.id : user.id;
   if (!/^[0-9a-f-]{36}$/i.test(target)) return null;
   // The backend independently enforces ownership or active reviewer assignment and consent.
   let path = `students/${target}/${studentActions[action]}`;
+  if (action === "safety-choice") {
+    const id = request.nextUrl.searchParams.get("id") ?? "";
+    return /^[0-9a-f-]{36}$/i.test(id) ? `${path}/${id}` : null;
+  }
   if (["conversation", "chat-turn", "hide-conversation"].includes(action)) {
     const id = request.nextUrl.searchParams.get("id") ?? "";
     if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
@@ -46,14 +52,25 @@ function clear(response: NextResponse) {
   for (const name of [accessCookie, refreshCookie]) response.cookies.set(name, "", { ...options, maxAge: 0 });
 }
 
+function safetyPath(action: string, request: NextRequest) {
+  if (action === "safety-queue") {
+    const state = request.nextUrl.searchParams.get("state") ?? "new";
+    const offset = Math.max(0, Math.min(100000, Number(request.nextUrl.searchParams.get("offset") ?? 0) || 0));
+    return ["new", "under_review", "resolved", "referred"].includes(state) ? `reviewer/safety-queue?state=${state}&offset=${Math.floor(offset)}` : null;
+  }
+  if (!["safety-review", "safety-workflow"].includes(action)) return null;
+  const id = request.nextUrl.searchParams.get("id") ?? "";
+  return /^[0-9a-f-]{36}$/i.test(id) ? `safety-signals/${id}/${action === "safety-review" ? "reviews" : "workflow"}` : null;
+}
+
 export async function POST(request: NextRequest, context: { params: Promise<{ action: string }> }) {
   // Cookie-authenticated mutations always require the configured frontend origin.
   const expected = process.env.AUTH_PUBLIC_URL ?? request.nextUrl.origin;
   if (request.headers.get("origin") !== expected) return NextResponse.json({ detail: "Access denied" }, { status: 403 });
   const { action } = await context.params;
-  let path = actions[action];
+  let path = safetyPath(action, request) ?? actions[action];
   if (!path && !studentActions[action]) return NextResponse.json({ detail: "Not found" }, { status: 404 });
-  if (["privacy", "records", "conversations", "trends", "consent-history", "onboarding", "conversation"].includes(action)) return NextResponse.json({ detail: "Method not allowed" }, { status: 405 });
+  if (["privacy", "records", "conversations", "trends", "consent-history", "onboarding", "conversation", "safety-queue", "safety-resources", "safety-workflow", "safety-follow-ups"].includes(action)) return NextResponse.json({ detail: "Method not allowed" }, { status: 405 });
   if (Number(request.headers.get("content-length") ?? 0) > 32768) return NextResponse.json({ detail: "Request too large" }, { status: 413 });
   let body;
   try {
@@ -73,7 +90,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ac
       path = derived;
     }
     const upstream = await fetch(`${origin()}/api/v1/${path}`, {
-      method: action === "profile" ? "PATCH" : action === "consent" ? "PUT" : ["withdraw-consent", "hide-conversation"].includes(action) ? "DELETE" : "POST", cache: "no-store",
+      method: ["profile", "safety-choice"].includes(action) ? "PATCH" : action === "consent" ? "PUT" : ["withdraw-consent", "hide-conversation"].includes(action) ? "DELETE" : "POST", cache: "no-store",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: ["withdraw-consent", "hide-conversation"].includes(action) ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(30000)
     });
@@ -94,11 +111,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ac
 
 export async function GET(request: NextRequest, context: { params: Promise<{ action: string }> }) {
   const { action } = await context.params;
-  if (!["profile", "onboarding", "consent", "consent-history", "privacy", "records", "conversations", "trends", "longitudinal", "data-controls", "conversation"].includes(action)) return NextResponse.json({ detail: "Not found" }, { status: 404 });
+  if (!["profile", "onboarding", "consent", "consent-history", "privacy", "records", "conversations", "trends", "longitudinal", "data-controls", "conversation", "safety-queue", "safety-workflow", "safety-resources", "safety-follow-ups"].includes(action)) return NextResponse.json({ detail: "Not found" }, { status: 404 });
   const token = request.cookies.get(accessCookie)?.value;
+  if (action === "safety-resources") {
+    try { const upstream = await fetch(`${origin()}/api/v1/safety/resources`, { cache: "no-store", signal: AbortSignal.timeout(5000) });
+      return NextResponse.json(await upstream.json(), { status: upstream.status, headers: { "Cache-Control": "no-store" } });
+    } catch { return NextResponse.json({ detail: "Directory unavailable" }, { status: 503 }); }
+  }
   if (!token) return NextResponse.json({ detail: "Please sign in" }, { status: 401 });
   try {
-    const path = actions[action] ?? await studentPath(action, request, token);
+    const path = safetyPath(action, request) ?? actions[action] ?? await studentPath(action, request, token);
     if (!path) return NextResponse.json({ detail: "Please sign in" }, { status: 401 });
     const upstream = await fetch(`${origin()}/api/v1/${path}`, { cache: "no-store",
       headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000) });

@@ -12,9 +12,11 @@ from app.auth_routes import Input
 from app.consent_policy import POLICY_VERSION, policy_document
 from app.models import Conversation, InteractionSession, Message, utcnow
 from app.persistence import ConsentDenied, current_consent
+from app.safety import record_signals, screen
 from app.text_analysis import enqueue, execute, results
 from services.conversation.prompt import PROMPT_VERSION
 from services.conversation.providers import FALLBACK, safe_reply
+from services.safety.resources import supportive_message
 
 router = APIRouter(prefix="/api/v1", tags=["conversation"])
 
@@ -63,12 +65,14 @@ def send_message(
             or consent.disclosure_snapshot.get("conversation_processing") != processing
             or consent.disclosure_snapshot.get("text_analysis_processing", {"models": []})
             != policy["text_analysis_processing"]
+            or consent.disclosure_snapshot.get("safety_processing") != policy["safety_processing"]
         ):
             raise ConsentDenied(
                 "Review the current consent information and conversational processor before sending"
             )
     except ConsentDenied as exc:
         raise HTTPException(409, str(exc)) from None
+    safety_observations, safety_policy, safety_resources = screen(body.text)
     conversation = db.scalar(
         select(Conversation)
         .where(Conversation.id == conversation_id)
@@ -125,7 +129,7 @@ def send_message(
         )
     )
     if pending and pending.generation and pending.generation.get("status") == "pending":
-        if pending.created_at > utcnow() - timedelta(seconds=60):
+        if not safety_observations and pending.created_at > utcnow() - timedelta(seconds=60):
             raise HTTPException(409, "Wait for the current response before sending another message")
         pending.text_content = FALLBACK
         pending.generation = {
@@ -161,6 +165,20 @@ def send_message(
     db.add_all([student, assistant])
     conversation.updated_at = utcnow()
     db.flush()
+    if safety_observations:
+        try:
+            record_signals(db, student, safety_observations, safety_policy, consent)
+        except ConsentDenied as exc:
+            db.rollback()
+            raise HTTPException(409, str(exc)) from None
+        priority = "urgent" if any(c.priority == "urgent" for c in safety_observations) else "prompt"
+        assistant.text_content = supportive_message(priority, safety_resources)
+        assistant.generation = {**assistant.generation, "status": "completed", "provider": "local-safety",
+                                "model": "literal-safety-analysis", "version": safety_policy.fingerprint,
+                                "safety_priority": priority, "policy_version": safety_policy.version}
+        audit(db, user.id, "conversation.immediate_support", "conversation", conversation_id)
+        db.commit()
+        return {"messages": [view(student), view(assistant)]}
     analysis_jobs = enqueue(db, student)
     context = list(
         db.scalars(
@@ -193,6 +211,7 @@ def send_message(
             latest.id == receipt_id
             and latest.text_processing
             and policy_document()["conversation_processing"] == processing
+            and policy_document()["safety_processing"] == policy["safety_processing"]
         )
     except ConsentDenied:
         allowed = False

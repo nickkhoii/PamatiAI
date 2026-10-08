@@ -4,7 +4,7 @@ from copy import deepcopy
 from hashlib import sha256
 from urllib.parse import urlsplit
 
-POLICY_VERSION = "2026-10-08.5"
+POLICY_VERSION = "2026-10-08.6"
 DISCLOSURES = [
     {
         "title": "Purpose",
@@ -54,6 +54,7 @@ def policy_document():
     from app.config import get_settings
     from app.longitudinal import disclosure as longitudinal_disclosure
     from app.multimodal_fusion import disclosure as fusion_disclosure
+    from app.safety import disclosure as safety_disclosure
     from app.text_analysis import disclosure
     from app.visual_analysis import disclosure as visual_disclosure
 
@@ -72,6 +73,12 @@ def policy_document():
     disclosures = deepcopy(DISCLOSURES)
     disclosures[1]["text"] += (
         f" Current conversational processor: {processing['provider']} on {processing['host']}; model {processing['model']}, version {processing['version']}."
+    )
+    disclosures[9]["text"] += (
+        " Consented chat includes local, configurable safety-language rules separate from sentiment models. "
+        "Potential safety language receives immediate supportive guidance without waiting for trend analysis. "
+        "Rules can miss context and language; a workflow signal is not a diagnosis. Assigned reviewers can "
+        "access signals only with your reviewer-access permission. No emergency contact is made automatically."
     )
     text_processing = disclosure()
     audio_processing = audio_disclosure()
@@ -120,4 +127,5 @@ def policy_document():
         "visual_analysis_processing": visual_processing,
         "multimodal_fusion_processing": fusion_processing,
         "longitudinal_processing": longitudinal_processing,
+        "safety_processing": safety_disclosure(),
     }

@@ -17,6 +17,7 @@ from app.longitudinal_routes import router as longitudinal_router
 from app.multimodal_routes import router as multimodal_router
 from app.privacy_routes import router as privacy_router
 from app.resource_routes import router as resource_router
+from app.safety_routes import router as safety_router
 from app.visual_routes import router as visual_router
 
 
@@ -42,6 +43,7 @@ app.include_router(audio_router)
 app.include_router(visual_router)
 app.include_router(multimodal_router)
 app.include_router(longitudinal_router)
+app.include_router(safety_router)
 
 
 @app.middleware("http")

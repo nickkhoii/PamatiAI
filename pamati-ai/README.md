@@ -28,6 +28,8 @@ Experimental multimodal fusion combines explicitly selected, consented analysis 
 
 Longitudinal tracking provides interaction, daily and weekly summaries, rolling personal baselines, trajectories and configurable experimental change indicators. Student records and assigned reviewer trend views show gaps and uncertainty without diagnostic scores. See [LONGITUDINAL_ANALYSIS](docs/LONGITUDINAL_ANALYSIS.md) for mathematical definitions, consent and configuration.
 
+Consented chat now routes configured explicit safety-language concerns to immediate local supportive guidance and a human-review workflow. Assigned reviewers use `/reviewer/safety`; students can view documented support offers. Apply database migration `0008_safety_workflow` before running against an existing database. See [SAFETY_PROTOCOL](docs/SAFETY_PROTOCOL.md) for policies, contact configuration, permissions and limitations.
+
 Authentication, institutional onboarding, informed consent, student privacy views, protected student/counselor/administrator APIs and conversational message submission are implemented. A compatible HTTP model adapter is available with mocked validation; no real model deployment has been evaluated. Domain notifications, physical erasure/export fulfillment and full staff workspaces remain planned. Institutional governance and operational integrations must be validated before onboarding real participants.
 
 ## Docker development

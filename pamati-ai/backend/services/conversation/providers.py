@@ -86,16 +86,16 @@ def get_provider() -> ConversationProvider:
 
 
 def safe_reply(messages: list[dict[str, str]]) -> Reply:
-    text = messages[-1]["content"].casefold()
-    if any(
-        term in text
-        for term in ("kill myself", "suicide", "end my life", "hurt myself", "immediate danger")
-    ):
+    from app.safety import screen
+    from services.safety.resources import supportive_message
+
+    candidates, policy, resources = screen(messages[-1]["content"])
+    if candidates:
         return Reply(
-            "Your safety matters. If you might act on these thoughts or are in immediate danger, contact local emergency services or go to the nearest emergency department now. If possible, ask a trusted person to stay with you. I’m an AI assistant, cannot dispatch help, and this chat is not continuously monitored.",
+            supportive_message("urgent" if any(c.priority == "urgent" for c in candidates) else "prompt", resources),
             "local-safety",
-            "safety-template",
-            "1",
+            "literal-safety-analysis",
+            policy.fingerprint,
         )
     try:
         reply = get_provider().generate(messages)
@@ -115,6 +115,12 @@ def safe_reply(messages: list[dict[str, str]]) -> Reply:
             "i'm your therapist",
             "as your therapist",
             "you are depressed",
+            "depressed student",
+            "suicidal student",
+            "mental disorder detected",
+            "you are suicidal",
+            "you are mentally ill",
+            "your mental health score",
         )
         if not isinstance(text, str) or not text.strip() or len(text) > 6000:
             raise ValueError("Invalid provider output")

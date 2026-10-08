@@ -477,11 +477,21 @@ class RiskSignal(Entity, Mutable, SoftDelete, Base):
         owned_link(
             ["trend_id", "student_id"], ["sentiment_trends.id", "sentiment_trends.student_id"]
         ),
-        CheckConstraint("inference_id IS NOT NULL OR trend_id IS NOT NULL", name="signal_source"),
+        CheckConstraint("inference_id IS NOT NULL OR trend_id IS NOT NULL OR source_message_id IS NOT NULL", name="signal_source"),
+        CheckConstraint("confidence IS NULL OR (confidence >= 0 AND confidence <= 1)", name="signal_confidence"),
+        UniqueConstraint("source_message_id", "signal_code", "rule_version"),
         Index("ix_risks_student_status", "student_id", "status"),
         TABLE_OPTIONS,
     )
     student_id: Mapped[str] = reference("student_profiles.user_id")
+    source_message_id: Mapped[str | None] = reference("messages.id", nullable=True)
+    consent_record_id: Mapped[str | None] = reference("consent_records.id", nullable=True)
+    confidence: Mapped[float | None] = mapped_column(Float)
+    workflow_state: Mapped[str] = mapped_column(
+        choice("safety_workflow_state", "new", "under_review", "resolved", "referred"), default="new", server_default="new"
+    )
+    assigned_reviewer_id: Mapped[str | None] = reference("reviewer_profiles.user_id", nullable=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     inference_id: Mapped[str | None] = mapped_column(String(36))
     trend_id: Mapped[str | None] = mapped_column(String(36))
     signal_code: Mapped[str] = mapped_column(String(80))
@@ -507,9 +517,12 @@ class HumanReview(Entity, Base):
     risk_signal_id: Mapped[str] = mapped_column(String(36), index=True)
     reviewer_id: Mapped[str] = reference("reviewer_profiles.user_id", index=True)
     decision: Mapped[str] = mapped_column(
-        choice("review_decision", "acknowledge", "dismiss", "follow_up", "refer")
+        choice("review_decision", "acknowledge", "dismiss", "follow_up", "refer", "resolve", "reopen")
     )
     notes: Mapped[str | None] = mapped_column(Text)
+    workflow_from: Mapped[str | None] = mapped_column(String(20))
+    workflow_to: Mapped[str | None] = mapped_column(String(20))
+    signal_revision: Mapped[int | None] = mapped_column(Integer)
     risk_signal: Mapped[RiskSignal] = relationship(foreign_keys=[risk_signal_id])
 
 
