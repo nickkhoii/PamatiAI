@@ -12,7 +12,7 @@
 | reviewer_access | Assigned counselor access | Independent; active assignment and current consent also required |
 | retain_audio / retain_visual | Retain corresponding raw samples | Corresponding analysis permission, environment gate, database gate and configured expiry cap |
 
-New choices default false. There is no all-enabled switch, preselected optional grant, countdown, guilt message or disadvantage to declining optional features. The three onboarding steps can be revisited directly. ìSave these choicesî and ìContinue without AI analysisî have equal visual prominence. A separate acknowledgement confirms review of the disclosures; it never toggles an analysis flag. Raw retention is always false in the onboarding submission.
+New choices default false. There is no all-enabled switch, preselected optional grant, countdown, guilt message or disadvantage to declining optional features. The three onboarding steps can be revisited directly. ‚ÄúSave these choices‚Äù and ‚ÄúContinue without AI analysis‚Äù have equal visual prominence. A separate acknowledgement confirms review of the disclosures; it never toggles an analysis flag. Raw retention is always false in the onboarding submission.
 
 ## Evidence and versioning
 
@@ -24,7 +24,7 @@ API timestamps use naive UTC internally, as in the existing database; browser pa
 
 ## State and routes
 
-`GET /api/v1/me/onboarding` returns current disclosures, retention policy, latest receipt and whether current onboarding information has been acknowledged. A receipt with all choices false can complete acknowledgement; completing onboarding never means ìall processing permitted.î A withdrawn receipt is incomplete for renewed processing until the student saves new choices.
+`GET /api/v1/me/onboarding` returns current disclosures, retention policy, latest receipt and whether current onboarding information has been acknowledged. A receipt with all choices false can complete acknowledgement; completing onboarding never means ‚Äúall processing permitted.‚Äù A withdrawn receipt is incomplete for renewed processing until the student saves new choices.
 
 `PUT /api/v1/students/{id}/consent` saves choices after server-side ownership/permission checks. `GET .../consent` returns the latest receipt; `GET .../consent/history` returns bounded receipt history. `DELETE .../consent` timestamps withdrawal, cancels pending/running jobs, revokes future research membership and expires raw media references. Repeating withdrawal succeeds without rewriting the original withdrawal timestamp. It does not deactivate the account or submit an erasure request.
 

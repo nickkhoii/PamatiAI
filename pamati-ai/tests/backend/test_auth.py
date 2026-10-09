@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import timedelta
+from functools import lru_cache
 from unittest.mock import patch
 
 import pytest
@@ -37,6 +38,26 @@ from app.models import (
 PASSWORD = "a-long-test-passphrase-123"
 
 
+@lru_cache
+def migrate_test_database(url):
+    """Exercise migrations before MySQL fixtures, never create unversioned production tables."""
+    from alembic import command
+    from alembic.config import Config
+
+    from app.config import get_settings
+    old_url = os.environ.get("DATABASE_URL")
+    os.environ["DATABASE_URL"] = url
+    get_settings.cache_clear()
+    try:
+        command.upgrade(Config("alembic.ini"), "head")
+    finally:
+        if old_url is None:
+            os.environ.pop("DATABASE_URL", None)
+        else:
+            os.environ["DATABASE_URL"] = old_url
+        get_settings.cache_clear()
+
+
 @pytest.fixture(params=["sqlite"] + (["mysql"] if os.environ.get("TEST_DATABASE_URL") else []))
 def api(request):
     mysql = request.param == "mysql"
@@ -44,6 +65,7 @@ def api(request):
         url = make_url(os.environ["TEST_DATABASE_URL"])
         if url.drivername != "mysql+pymysql" or not (url.database or "").endswith("_test"):
             pytest.fail("Authentication tests require an isolated MySQL _test database")
+        migrate_test_database(os.environ["TEST_DATABASE_URL"])
         engine = create_engine(url)
     else:
         engine = create_engine(
@@ -55,7 +77,8 @@ def api(request):
         if not mysql:
             connection.execute("PRAGMA foreign_keys=ON")
 
-    Base.metadata.create_all(engine)
+    if not mysql:
+        Base.metadata.create_all(engine)
     settings = Settings(
         auth_delivery_key=Fernet.generate_key().decode(),
         smtp_host="smtp.test.example",

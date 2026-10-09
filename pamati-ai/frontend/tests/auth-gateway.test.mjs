@@ -11,7 +11,7 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
   const backend = createServer(async (request, response) => {
     let body = "";
     for await (const chunk of request) body += chunk;
-    calls.push({ path: request.url, method: request.method, body: body ? JSON.parse(body) : {}, authorization: request.headers.authorization });
+    calls.push({ path: request.url, method: request.method, body: body ? request.headers["content-type"]?.startsWith("audio/") ? { bytes: Buffer.byteLength(body) } : JSON.parse(body) : {}, authorization: request.headers.authorization });
     response.setHeader("Content-Type", "application/json");
     if (["/api/v1/auth/login", "/api/v1/auth/refresh"].includes(request.url)) {
       response.end(JSON.stringify({ access_token: "test-access-secret", refresh_token: "test-refresh-secret", expires_in: 900 }));
@@ -19,6 +19,8 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
       response.end(JSON.stringify({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", email: "test@example.com", display_name: "Test", roles: ["STUDENT"] }));
     } else if (request.url.startsWith("/api/v1/dashboard/")) {
       response.end(JSON.stringify({ items: [], total: 0, page: 1, limit: 12 }));
+    } else if (request.url.startsWith("/api/v1/notifications?") || request.url.includes("/audio-analyses")) {
+      response.end(JSON.stringify({ items: [], total: 0, unread_count: 0, status: "completed" }));
     } else if (request.url.startsWith("/api/v1/conversations/") && request.method !== "DELETE") {
       response.end(JSON.stringify({ messages: [], next_offset: null }));
     } else if (request.url.startsWith("/api/v1/students/") && request.method !== "DELETE") {
@@ -55,6 +57,29 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
       assert.match(cookie, /HttpOnly/i); assert.match(cookie, /Secure/i); assert.match(cookie, /SameSite=strict/i);
     }
     const cookieHeader = cookies.map(cookie => cookie.split(";")[0]).join("; ");
+    const inbox = await fetch(origin + "/api/auth/notifications?unread=true&page=2", { headers: { Cookie: cookieHeader } });
+    assert.equal(inbox.status, 200);
+    assert.equal(calls.at(-1).path, "/api/v1/notifications?page=2&unread=true");
+    const event = "support:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:requested";
+    const beforeForged = calls.length;
+    const forgedRead = await fetch(origin + `/api/auth/notifications?id=${event}`, { method: "POST", headers: { Origin: "https://attacker.example", Cookie: cookieHeader } });
+    assert.equal(forgedRead.status, 403); assert.equal(calls.length, beforeForged);
+    const read = await fetch(origin + `/api/auth/notifications?id=${event}`, { method: "POST", headers: { Origin: origin, Cookie: cookieHeader } });
+    assert.equal(read.status, 200); assert.equal(calls.at(-1).method, "POST");
+    const mediaPath = "/api/auth/media?session=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa&modality=audio";
+    const beforeInvalidMedia = calls.length;
+    for (const [headers, body, status] of [
+      [{ Origin: "https://attacker.example", Cookie: cookieHeader, "Content-Type": "audio/wav" }, "test", 403],
+      [{ Origin: origin, Cookie: cookieHeader, "Content-Type": "text/html" }, "test", 415],
+      [{ Origin: origin, Cookie: cookieHeader, "Content-Type": "audio/wav" }, "x".repeat(3000001), 413]
+    ]) {
+      assert.equal((await fetch(origin + mediaPath, { method: "POST", headers, body })).status, status);
+    }
+    assert.equal(calls.length, beforeInvalidMedia);
+    const media = await fetch(origin + mediaPath, { method: "POST", headers: { Origin: origin, Cookie: cookieHeader, "Content-Type": "audio/wav" }, body: "RIFFtest" });
+    assert.equal(media.status, 200);
+    assert.equal(calls.at(-1).path, "/api/v1/sessions/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/audio-analyses");
+    assert.equal(calls.at(-1).authorization, "Bearer test-access-secret");
     const profile = await fetch(origin + "/api/auth/profile", { headers: { Cookie: cookieHeader } });
     assert.equal(profile.status, 200);
     assert.equal(calls.at(-1).authorization, "Bearer test-access-secret");

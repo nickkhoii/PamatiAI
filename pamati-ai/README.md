@@ -1,5 +1,7 @@
 # PamatiAI
 
+The complete final-integration setup, deployment, model limitations and 23-topic guide is the [repository README](../README.md). See the [final audit](../docs/FINAL_SYSTEM_AUDIT.md) for current verification evidence.
+
 **A Multimodal Conversational AI Framework for Student Mental Health and Sentiment Tracking**
 
 Production-oriented research prototype foundation for higher-education student support. PamatiAI performs sentiment/affect analysis and support-oriented risk signaling, NOT clinical diagnosis. It must not prescribe treatment or replace professionals or emergency services. AI indicators require authorized human oversight.
@@ -65,7 +67,7 @@ using [TEXT_ANALYSIS](docs/TEXT_ANALYSIS.md).
 
 Student chat at `/student/chat` includes conversation history, accessible text composition, consent status, privacy/settings links and human-support requests. The default uses local predefined support responses; a modular model adapter is available. Apply migration `0007_conversation` before launch. See [conversation behavior and provider configuration](docs/CONVERSATION.md).
 
-Next.js/React/TypeScript/Tailwind shell with real service status; FastAPI liveness and database readiness; normalized MySQL utf8mb4 schema with 37 domain/authentication tables; SQLAlchemy models and explicit Alembic migrations; consent-aware persistence helpers and database guards; Argon2id development seeds; tested least-privilege authorization policy; pluggable analysis pipelines; Docker development services and dependency locks.
+Next.js/React/TypeScript/Tailwind shell with real service status; FastAPI liveness and database readiness; normalized MySQL utf8mb4 schema with 39 domain/authentication tables; SQLAlchemy models and explicit Alembic migrations; consent-aware persistence helpers and database guards; Argon2id development seeds; tested least-privilege authorization policy; pluggable analysis pipelines; Docker development services and dependency locks.
 
 Experimental multimodal fusion combines explicitly selected, consented analysis records through the API, with late fusion, compatible weighted probability fusion and a learned-strategy interface. See [MULTIMODAL_FUSION](docs/MULTIMODAL_FUSION.md) for configuration, provenance and scientific limitations.
 
@@ -73,7 +75,7 @@ Longitudinal tracking provides interaction, daily and weekly summaries, rolling 
 
 Consented chat now routes configured explicit safety-language concerns to immediate local supportive guidance and a human-review workflow. Assigned reviewers use `/reviewer/safety`; students can view documented support offers. Apply database migration `0008_safety_workflow` before running against an existing database. See [SAFETY_PROTOCOL](docs/SAFETY_PROTOCOL.md) for policies, contact configuration, permissions and limitations.
 
-Authentication, institutional onboarding, informed consent, student privacy views, protected student/counselor/administrator APIs and conversational message submission are implemented. A compatible HTTP model adapter is available with mocked validation; no real model deployment has been evaluated. Domain notifications and physical erasure/export fulfillment remain planned. Institutional governance and operational integrations must be validated before onboarding real participants.
+Authentication, institutional onboarding, informed consent, student privacy views, protected student/counselor/administrator APIs and conversational message submission are implemented. A compatible HTTP model adapter is available with mocked validation; no real model deployment has been evaluated. Private in-app notifications and administrator privacy request review are implemented. Physical erasure/export fulfillment and external domain delivery remain operational gaps. Institutional governance and operational integrations must be validated before onboarding real participants.
 
 ## Docker development
 

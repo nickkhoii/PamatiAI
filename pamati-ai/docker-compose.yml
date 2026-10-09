@@ -36,6 +36,11 @@ services:
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-}
+      CONVERSATION_PROVIDER: ${CONVERSATION_PROVIDER:-local-support}
+      CONVERSATION_ENDPOINT: ${CONVERSATION_ENDPOINT:-}
+      CONVERSATION_MODEL: ${CONVERSATION_MODEL:-}
+      CONVERSATION_MODEL_VERSION: ${CONVERSATION_MODEL_VERSION:-deployment-unspecified}
+      CONVERSATION_API_KEY: ${CONVERSATION_API_KEY:-}
       ALLOW_RAW_MEDIA_STORAGE: ${ALLOW_RAW_MEDIA_STORAGE:-false}
       SAFETY_POLICY: '${SAFETY_POLICY:-{}}'
       SAFETY_RESOURCES: '${SAFETY_RESOURCES:-[]}'
@@ -65,8 +70,8 @@ services:
       VISUAL_SAMPLE_COUNT: ${VISUAL_SAMPLE_COUNT:-8}
       VISUAL_MAX_SECONDS: ${VISUAL_MAX_SECONDS:-30.0}
       VISUAL_TEMPORARY_DIRECTORY: /tmp/pamati-visual
-      CORS_ORIGINS: '["http://localhost:3000"]'
-      ALLOWED_HOSTS: '["localhost","127.0.0.1","backend"]'
+      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:3000"]}'
+      ALLOWED_HOSTS: '${ALLOWED_HOSTS:-["localhost","127.0.0.1","backend"]}'
     depends_on:
       db:
         condition: service_healthy
@@ -82,7 +87,7 @@ services:
       - ./backend/app:/workspace/backend/app:ro
       - audio_recordings:/workspace/private-audio
     depends_on:
-      migrate:
+      seed:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/ready', timeout=4)"]
@@ -90,6 +95,53 @@ services:
       timeout: 5s
       retries: 5
     networks: [web, data]
+  seed:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    command: ["python", "-m", "app.database_commands", "seed"]
+    environment: *backend_env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [data]
+  development-accounts:
+    profiles: [development-accounts]
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    command: ["python", "-m", "app.database_commands", "seed", "--development-accounts"]
+    environment:
+      <<: *backend_env
+      DEV_SEED_PASSWORD: ${DEV_SEED_PASSWORD:-}
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    networks: [data]
+  auth-mail:
+    profiles: [operations]
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    command: ["python", "-m", "app.auth_mail"]
+    environment: *backend_env
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [web, data]
+  purge-audio:
+    profiles: [operations]
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    command: ["python", "-m", "app.audio_analysis"]
+    environment: *backend_env
+    volumes:
+      - audio_recordings:/workspace/private-audio
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [data]
   frontend:
     build:
       context: .

@@ -2,7 +2,7 @@
 
 PamatiAI exposes server-enforced authentication and resource authorization. Accounts have institutional roles STUDENT, COUNSELOR or ADMIN. The migration renames the previous SYSTEM_ADMINISTRATOR role to ADMIN without discarding its memberships. Role codes submitted by a registrant are rejected.
 
-Passwords use Argon2id, with rehash on login when parameters change. New passwords require 15–128 characters. Login failures use generic errors and persistent, hashed IP/account throttle buckets shared across workers. Public recovery requests return the same response for known and unknown accounts. Credentials, email link tokens and sensitive content are excluded from audit events.
+Passwords use Argon2id, with rehash on login when parameters change. New passwords require 15â€“128 characters. Login failures use generic errors and persistent, hashed IP/account throttle buckets shared across workers. Public recovery requests return the same response for known and unknown accounts. Credentials, email link tokens and sensitive content are excluded from audit events.
 
 Opaque access tokens last 15 minutes by default. Refresh tokens rotate once per use and have an absolute seven-day session lifetime. Only SHA-256 digests of bearer tokens are stored. Replaying a consumed refresh token revokes its whole session family. Logout, password reset/change, deactivation and role changes revoke applicable sessions immediately. Current account status, roles and permissions are read from the database on each protected request. User-row locking serializes credential changes and refresh; sessions are re-read with locking reads to avoid stale MySQL snapshots.
 

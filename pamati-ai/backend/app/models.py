@@ -680,6 +680,14 @@ class SupportRequest(Entity, Base):
     status: Mapped[str] = mapped_column(String(20), default="requested")
 
 
+class NotificationReceipt(Entity, Base):
+    __tablename__ = "notification_receipts"
+    __table_args__ = (UniqueConstraint("user_id", "event_key"), TABLE_OPTIONS)
+    user_id: Mapped[str] = reference("users.id", index=True)
+    event_key: Mapped[str] = mapped_column(String(100))
+    # Receipt only: no duplicated case content, names, email or diagnostic data.
+
+
 class WellbeingCheckIn(Entity, SoftDelete, Base):
     __tablename__ = "wellbeing_check_ins"
     student_id: Mapped[str] = reference("student_profiles.user_id", index=True)

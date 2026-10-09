@@ -53,8 +53,8 @@ def seed(session: Session, *, development_accounts=False, password=None, environ
     environment = environment or get_settings().environment
     if development_accounts and environment != "development":
         raise ValueError("Development accounts are prohibited outside development")
-    if development_accounts and (not password or len(password) < 16):
-        raise ValueError("Set DEV_SEED_PASSWORD to at least 16 characters")
+    if development_accounts and (not password or not 16 <= len(password) <= 128):
+        raise ValueError("Set DEV_SEED_PASSWORD to 16–128 characters")
     permissions = {}
     for code in sorted(set.union(*ROLE_PERMISSIONS.values())):
         permission = session.scalar(select(Permission).where(Permission.code == code))

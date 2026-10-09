@@ -38,7 +38,7 @@ MULTIMODAL_FUSION_MAXIMUM_SOURCE_SPAN_SECONDS=300.0
 
 These settings are forwarded by Docker Compose. Setting enabled to false disables the fusion endpoint's processing; text support remains independent. Fusion is explicit through the API, never automatically invoked by conversation submission. Audio and visual pipelines remain independently disabled by default.
 
-The alignment window (0–3600 seconds) excludes sources older than the newest selected source's processing completion timestamp. This is a conservative operational filter, **not capture synchronization**. Asynchronous processing delays can distort alignment; same-session sources can still refer to different utterances. Research protocols must document capture times and turn pairing externally rather than claim simultaneous evidence.
+The alignment window (0â€“3600 seconds) excludes sources older than the newest selected source's processing completion timestamp. This is a conservative operational filter, **not capture synchronization**. Asynchronous processing delays can distort alignment; same-session sources can still refer to different utterances. Research protocols must document capture times and turn pairing externally rather than claim simultaneous evidence.
 
 ## Persistence and reproduction
 

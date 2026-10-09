@@ -46,7 +46,7 @@ The trajectory is an ordinary least-squares slope over observed daily means in `
 
 ```text
 q_u = calendar-day distance from first observed day
-slope = S_u (q_u - mean(q)) * (d_u - mean(d)) / S_u (q_u - mean(q))²
+slope = S_u (q_u - mean(q)) * (d_u - mean(d)) / S_u (q_u - mean(q))Â²
 ```
 
 Require a current-day estimate and at least `minimum_trajectory_days` distinct observed days (default 3). Use actual calendar-day distances through gaps; do not interpolate. The slope has dimension-score units per day and no clinical interpretation.
@@ -66,7 +66,7 @@ Using the previous day's baseline for both sides prevents baseline drift alone f
 Interaction summaries report sample standard deviation of available source scores; daily summaries report sample standard deviation of interaction means; weekly summaries report sample standard deviation of observed daily means; baselines report sample standard deviation of historical daily means:
 
 ```text
-s = sqrt(S_i (v_i - mean(v))² / (n - 1)), for n = 2
+s = sqrt(S_i (v_i - mean(v))Â² / (n - 1)), for n = 2
 ```
 
 With fewer than two values, spread is unavailable, not zero. These quantities describe observed dispersion, not calibrated confidence intervals, accuracy, or uncertainty about a latent emotional state. Source confidence/uncertainty availability is counted rather than averaged into an invented confidence score. Correlated sources, selection effects and model miscalibration remain. Counts, missing days and history requirements accompany all findings. The interface deliberately labels summaries uncalibrated.
@@ -82,7 +82,7 @@ LONGITUDINAL_CONFIGURATION={"baseline_days":28,"minimum_baseline_interactions":8
 
 ## API and visualizations
 
-- `POST /api/v1/students/{student_id}/longitudinal` explicitly generates and stores current snapshots. Body `{}` means the last 90 UTC calendar days, including today. Alternatively provide `{"start":"2026-09-01","end":"2026-10-01"}`; end is exclusive. Windows must contain 1–366 days and cannot extend beyond tomorrow UTC. Completed source records can be recomputed; observations are reused without duplication, while snapshots retain generation history.
+- `POST /api/v1/students/{student_id}/longitudinal` explicitly generates and stores current snapshots. Body `{}` means the last 90 UTC calendar days, including today. Alternatively provide `{"start":"2026-09-01","end":"2026-10-01"}`; end is exclusive. Windows must contain 1â€“366 days and cannot extend beyond tomorrow UTC. Completed source records can be recomputed; observations are reused without duplication, while snapshots retain generation history.
 - `GET /api/v1/students/{student_id}/longitudinal` reads the most recent snapshot per source pipeline/dimension. It performs no generation. Missing tracking permission returns an empty series list. Generating without current tracking consent/disclosure returns 409. Sources from receipts that declined tracking are not retroactively converted when tracking is later enabled.
 
 The bounded generator rejects more than 5,000 candidate sources or 128 experimental series rather than silently truncating evidence. Reads inspect at most the latest 512 stored snapshots; use a fresh bounded generation to refresh the dashboard rather than treat it as a complete archival export. Calculations run on existing bounded summaries under student/source locks, with a final authorization/source/configuration check before commit. Withdrawal or deleted inputs prevents publication. Changed/deleted evidence suppresses the entire stored snapshot on read; regenerate from remaining sources. Stored history is not automatically erased by consent withdrawal; privacy/export/erasure controls remain separate.

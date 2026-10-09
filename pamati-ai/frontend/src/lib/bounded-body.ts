@@ -3,13 +3,12 @@ export class BodyError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
-export async function boundedBody(request: Request): Promise<string> {
-  const maximum = 32768;
+export async function boundedBytes(request: Request, maximum = 32768): Promise<Uint8Array> {
   const declared = request.headers.get("content-length");
   if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > maximum)) {
     throw new BodyError(/^\d+$/.test(declared) ? 413 : 400, "Invalid request size");
   }
-  if (!request.body) return "";
+  if (!request.body) return new Uint8Array();
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
   let length = 0;
@@ -28,6 +27,11 @@ export async function boundedBody(request: Request): Promise<string> {
   const bytes = new Uint8Array(length);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  return bytes;
+}
+
+export async function boundedBody(request: Request): Promise<string> {
+  const bytes = await boundedBytes(request);
   try { return new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
   catch { throw new BodyError(400, "Invalid request encoding"); }
 }

@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SafetyContacts } from "./safety-contacts";
+import { ResearchUpload } from "./research-upload";
 
 type Generation = { status: string; provider?: string; model?: string; version?: string; prompt_version?: string };
-type Message = { id: string; sender: string; text: string | null; generation?: Generation | null };
+type Message = { id: string; session_id: string; sender: string; text: string | null; generation?: Generation | null };
 type Conversation = { id: string; status: string; created_at: string };
 type Consent = { text_processing: boolean; audio_processing: boolean; visual_processing: boolean; longitudinal_tracking: boolean; research_data_use: boolean; withdrawn_at: string | null };
 
@@ -193,6 +194,7 @@ export function StudentChat() {
             <textarea ref={composer} id="chat-message" value={draft} onChange={e => setDraft(e.target.value)} maxLength={4000} rows={3} disabled={busy || loading || !canChat} placeholder="What would you like to talk about?" aria-describedby="composer-hint" className="w-full resize-y bg-transparent p-2 text-base disabled:opacity-60" onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void send(); } }} />
             <div className="flex items-center justify-between gap-3"><p id="composer-hint" className="text-xs text-slate-500">Shift + Enter for a new line · {draft.length}/4000</p><button type="submit" disabled={busy || loading || !canChat || !draft.trim()} className="rounded-xl bg-teal-800 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">{busy ? "Responding…" : "Send message"}</button></div>
           </form>
+          {!busy && !loading && messages.at(-1)?.session_id && <ResearchUpload session={messages.at(-1)!.session_id} />}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500"><p>AI can make mistakes. For personal advice, seek qualified human support.</p>{selected && <button disabled={busy || loading} onClick={() => setConfirmHide(true)} className="underline">Hide conversation</button>}</div>
           {confirmHide && <div className="mt-3 rounded-lg border border-slate-200 p-3 text-sm"><p>Hide this conversation from your history? This does not erase retained records. Use Privacy to request deletion.</p><div className="mt-2 flex gap-4"><button disabled={busy} onClick={hideConversation} className="underline">Hide conversation</button><button onClick={() => setConfirmHide(false)} className="underline">Keep conversation</button></div></div>}
         </div>

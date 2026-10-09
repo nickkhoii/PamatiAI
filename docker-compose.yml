@@ -1,0 +1,4 @@
+name: pamati-ai
+include:
+  - path: ./pamati-ai/docker-compose.yml
+    env_file: ./pamati-ai/.env

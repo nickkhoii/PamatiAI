@@ -11,6 +11,26 @@ from app.models import ConsentRecord, Conversation, SystemSetting, WellbeingChec
 api = api_fixture
 
 
+def test_admin_privacy_request_review_excludes_conversation_content(api):
+    client, _, users, _, _ = api
+    student = headers(api, "alice")
+    admin = headers(api, "admin")
+    request = client.post(f"/api/v1/students/{users['alice'].id}/data-controls",
+                          json={"kind": "export"}, headers=student)
+    assert request.status_code == 202
+    request_id = request.json()["id"]
+    path = "/api/v1/dashboard/ADMIN/privacy-requests?status=requested&q=export&limit=1"
+    data = client.get(path, headers=admin).json()
+    assert data["total"] == 1 and data["items"][0]["id"] == request_id
+    assert "text" not in data["items"][0] and "notes" not in data["items"][0]
+    assert client.get(path, headers=student).status_code == 403
+    assert client.get(path + "&end=9999-12-31", headers=admin).status_code == 200
+    assert client.patch(f"/api/v1/admin/data-controls/{request_id}", headers=admin,
+                        json={"status": "in_review", "reason": "Institutional privacy officer reviewing request"}).status_code == 200
+    assert client.patch(f"/api/v1/admin/data-controls/{request_id}", headers=admin,
+                        json={"status": "completed", "reason": "Not physically fulfilled"}).status_code == 422
+
+
 def test_student_list_is_owned_searchable_and_paginated(api):
     client, db, users, _, _ = api
     db.add_all([Conversation(student_id=users["alice"].id, status="closed") for _ in range(3)])

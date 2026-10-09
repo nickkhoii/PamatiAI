@@ -13,6 +13,7 @@ from app.models import (
     AuditLog,
     ConsentRecord,
     Conversation,
+    DataControlRequest,
     HumanReview,
     ModelVersion,
     ReferralRecord,
@@ -83,6 +84,7 @@ def view(row):
         Conversation: ("id", "status", "created_at"),
         WellbeingCheckIn: ("id", "feeling", "created_at"),
         SupportRequest: ("id", "student_id", "status", "created_at"),
+        DataControlRequest: ("id", "student_id", "kind", "status", "review_due_at", "created_at"),
         HumanReview: ("id", "student_id", "risk_signal_id", "decision", "notes", "created_at"),
         ReferralRecord: (
             "id",
@@ -182,7 +184,8 @@ def listing(
             "referrals": ReferralRecord,
             "support": SupportRequest,
         },
-        "ADMIN": {"users": User, "roles": Role, "models": ModelVersion, "audit": AuditLog},
+        "ADMIN": {"users": User, "roles": Role, "models": ModelVersion, "audit": AuditLog,
+                  "privacy-requests": DataControlRequest},
     }
     model = maps[role].get(collection)
     if model is None:
@@ -215,6 +218,7 @@ def listing(
                 "code",
                 "service_reference",
                 "feeling",
+                "kind",
             )
             if hasattr(model, name)
         ]
@@ -245,7 +249,7 @@ def listing(
                 query = query.where(column == status)
     if start:
         query = query.where(model.created_at >= datetime.combine(start, time()))
-    if end:
+    if end and end < date.max:
         query = query.where(model.created_at < datetime.combine(end + timedelta(days=1), time()))
     query = query.order_by(model.created_at.desc(), model.id.desc())
     # Source liveness is domain logic: apply it before counting or paginating.

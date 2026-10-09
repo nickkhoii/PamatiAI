@@ -14,6 +14,7 @@ function target(request: NextRequest, mutation: boolean) {
     if (op === "setting" && ["data_retention", "raw_media_retention"].includes(id)) return [`admin/settings/${id}`, "PUT"];
     if (op === "assignment") return ["admin/assignments", "PUT"];
     if (op === "support-status" && uuid.test(id)) return [`dashboard/support/${id}`, "PATCH"];
+    if (op === "data-control" && uuid.test(id)) return [`admin/data-controls/${id}`, "PATCH"];
     return null;
   }
   if (p.get("op") === "observations" && uuid.test(id)) {
@@ -23,7 +24,7 @@ function target(request: NextRequest, mutation: boolean) {
   }
   const role = p.get("role") ?? "";
   const collection = p.get("collection") ?? "";
-  if (!["STUDENT", "COUNSELOR", "ADMIN"].includes(role) || !["conversations", "check-ins", "support", "resources", "cases", "queue", "reviews", "referrals", "users", "roles", "models", "audit", "settings"].includes(collection)) return null;
+  if (!["STUDENT", "COUNSELOR", "ADMIN"].includes(role) || !["conversations", "check-ins", "support", "resources", "cases", "queue", "reviews", "referrals", "users", "roles", "models", "audit", "settings", "privacy-requests"].includes(collection)) return null;
   const query = new URLSearchParams();
   for (const key of ["q", "status", "start", "end", "page", "limit", "student"]) if (p.get(key)) query.set(key, p.get(key)!);
   return [`dashboard/${role}/${collection}?${query}`, "GET"];

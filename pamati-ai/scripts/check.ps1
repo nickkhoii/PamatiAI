@@ -1,5 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
+$previousPythonPath = $env:PYTHONPATH
+$env:PYTHONPATH = "$projectRoot/backend;$projectRoot"
 Push-Location "$projectRoot/backend"
 try {
     & "$projectRoot/.venv/Scripts/python.exe" -m pytest
@@ -8,7 +10,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Backend lint failed' }
     & "$projectRoot/.venv/Scripts/python.exe" -m alembic upgrade head --sql
     if ($LASTEXITCODE -ne 0) { throw 'Migration SQL generation failed' }
-} finally { Pop-Location }
+} finally { Pop-Location; $env:PYTHONPATH = $previousPythonPath }
 Push-Location "$projectRoot/frontend"
 try {
     npm.cmd run lint

@@ -4,7 +4,7 @@ PamatiAI: A Multimodal Conversational AI Framework for Student Mental Health and
 
 ## Scope and implementation status
 
-This foundation runs a Next.js application, a FastAPI REST service, and MySQL 8.4 with utf8mb4. Implemented: live service status, readiness checking, validated configuration, SQLAlchemy connection lifecycle, 37 normalized database tables, explicit Alembic migrations, consent-aware persistence, database provenance/audit guards, development seed commands, deny-by-default authorization policy and automated database tests. Authentication, institutional onboarding, browser account forms, protected resource APIs and encrypted authentication email dispatch are implemented. Full participant workspaces, inference execution, privacy fulfillment and domain notification workers remain planned. No clinical claims are made. See [DATABASE.md](DATABASE.md) for implemented persistence relationships and limitations.
+This foundation runs a Next.js application, a FastAPI REST service, and MySQL 8.4 with utf8mb4. Implemented: live service status, readiness checking, validated configuration, SQLAlchemy connection lifecycle, 39 normalized database tables, explicit Alembic migrations, consent-aware persistence, database provenance/audit guards, development seed commands, deny-by-default authorization policy and automated database tests. Authentication, institutional onboarding, browser account forms, protected resource APIs and encrypted authentication email dispatch are implemented. Role workspaces, consent-aware inference, private in-app notifications and privacy request review are implemented. Physical privacy fulfillment and external domain notification delivery remain operational gaps. No clinical claims are made. See [DATABASE.md](DATABASE.md) for implemented persistence relationships and limitations.
 
 ## Components and boundaries
 
@@ -17,21 +17,21 @@ This foundation runs a Next.js application, a FastAPI REST service, and MySQL 8.
 | Consent management | Versioned purpose-specific receipts; independent text, speech, visual and research choices; withdrawal gates pending work. |
 | Conversation service | Persist consented messages, support-oriented replies; no medical advice. |
 | Text analysis | Versioned pluggable sentiment/affect inference with uncertainty and provenance. |
-| Speech analysis | Explicit opt-in transcription and acoustic processing; delete raw audio by default after processing. |
+| Speech analysis | Explicit opt-in acoustic processing (no transcription adapter bundled); delete raw audio by default after processing. |
 | Optional visual analysis | Separate opt-in; disabled by default; no identity or psychiatric inference. |
-| Multimodal fusion | Handle missing modalities explicitly; calibrated uncertainty; abstain when unsupported. |
+| Multimodal fusion | Handle missing modalities explicitly; reported uncertainty (empirical calibration remains required); abstain when unsupported. |
 | Longitudinal tracking | Student-relative trends with sample counts, windows, missingness and model-version boundaries. |
 | Safety signaling | Conservative, reviewable support signals; never a diagnosis or autonomous clinical decision. |
 | Human review | Assignment-scoped queue, acknowledgment and documented decisions; no automatic punitive actions. |
-| Notifications | Transactional outbox, retries and deduplication; no sensitive content in email or push. |
+| Notifications | Current authorized record projections with owner-scoped read receipts; in-app only, no sensitive content or emergency dispatch. |
 | Audit trail | Restricted append-only event records; metadata rather than conversation content. |
-| Privacy tools | Access/export, withdrawal, retention and deletion including derived outputs and backups. |
+| Privacy tools | Owner inventories, hide/withdrawal, retention holds and export/erasure request review; full physical fulfillment and backups require verified institutional workers. |
 
 ## Data flow
 
-Browser -> Next.js -> FastAPI -> SQLAlchemy -> MySQL. Future inference workers receive pseudonymous jobs only after consent and ownership validation, and recheck consent before publishing outputs. Transactional outbox records work and notifications alongside domain changes. Separate object storage is planned for ephemeral encrypted media; media must never enter application logs.
+Browser -> Next.js -> FastAPI -> SQLAlchemy -> MySQL. Analysis pipelines check consent and ownership before execution and recheck before publishing. Processing jobs preserve provenance; private notifications derive from current authorized records instead of copying case content. Authentication email uses an encrypted outbox. Separate object storage is planned for ephemeral encrypted media; media must never enter application logs.
 
-Use opaque identifiers, UTC timestamps and ownership-carrying composite foreign keys. These persistence entities are now implemented; protected application endpoints and an authentication email dispatcher are implemented; inference and privacy fulfillment workers remain planned. Analysis runs retain adapter version, model revision, preprocessing revision, modality availability, consent receipt, uncertainty and input lineage. Do not combine observations across changed model versions without documented validation.
+Use opaque identifiers, UTC timestamps and ownership-carrying composite foreign keys. These persistence entities are now implemented; protected application endpoints and an authentication email dispatcher are implemented; inference execution is implemented; complete personal export/erasure fulfillment remains an operational gap. Analysis runs retain adapter version, model revision, preprocessing revision, modality availability, consent receipt, uncertainty and input lineage. Do not combine observations across changed model versions without documented validation.
 
 ## Authorization
 
