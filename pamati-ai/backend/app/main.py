@@ -21,6 +21,7 @@ from app.http_security import BodyLimitMiddleware, api_budget
 from app.longitudinal_routes import router as longitudinal_router
 from app.multimodal_routes import router as multimodal_router
 from app.notification_routes import router as notification_router
+from app.personal_data_routes import router as personal_data_router
 from app.privacy_routes import router as privacy_router
 from app.resource_routes import router as resource_router
 from app.safety_routes import router as safety_router
@@ -54,6 +55,7 @@ app.include_router(longitudinal_router)
 app.include_router(safety_router)
 app.include_router(dashboard_router)
 app.include_router(notification_router)
+app.include_router(personal_data_router)
 
 
 @app.middleware("http")

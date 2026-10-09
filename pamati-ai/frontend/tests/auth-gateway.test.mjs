@@ -23,6 +23,10 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
       response.end(JSON.stringify({ items: [], total: 0, unread_count: 0, status: "completed" }));
     } else if (request.url.startsWith("/api/v1/conversations/") && request.method !== "DELETE") {
       response.end(JSON.stringify({ messages: [], next_offset: null }));
+    } else if (request.url.endsWith("/data-download")) {
+      response.end(JSON.stringify({ conversations: [], scope: "Available student records" }));
+    } else if (request.url.includes("/analyses?") || request.url.endsWith("/multimodal-analyses")) {
+      response.end(JSON.stringify({ items: [], total: 0, page: 1, limit: 12, status: "completed" }));
     } else if (request.url.startsWith("/api/v1/students/") && request.method !== "DELETE") {
       response.end(JSON.stringify({ records: [], next_offset: null }));
     } else { response.writeHead(204); response.end(); }
@@ -57,6 +61,21 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
       assert.match(cookie, /HttpOnly/i); assert.match(cookie, /Secure/i); assert.match(cookie, /SameSite=strict/i);
     }
     const cookieHeader = cookies.map(cookie => cookie.split(";")[0]).join("; ");
+    const download = await fetch(origin + "/api/auth/download?student_id=bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", { headers: { Cookie: cookieHeader } });
+    assert.equal(download.status, 200);
+    assert.match(download.headers.get("content-disposition"), /attachment/);
+    assert.equal(calls.at(-1).path, "/api/v1/students/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/data-download");
+    assert.equal((await fetch(origin + "/api/auth/download")).status, 401);
+    const analyses = await fetch(origin + "/api/auth/analyses?page=2&modality=audio", { headers: { Cookie: cookieHeader } });
+    assert.equal(analyses.status, 200);
+    assert.equal(calls.at(-1).path, "/api/v1/students/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/analyses?page=2&modality=audio");
+    const fusionPath = "/api/auth/fusion?session=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+    const beforeForgedFusion = calls.length;
+    assert.equal((await fetch(origin + fusionPath, { method: "POST", headers: { Cookie: cookieHeader, Origin: "https://attacker.example" }, body: "{}" })).status, 403);
+    assert.equal(calls.length, beforeForgedFusion);
+    const fusion = await fetch(origin + fusionPath, { method: "POST", headers: { Cookie: cookieHeader, Origin: origin, "Content-Type": "application/json" }, body: JSON.stringify({ source_inference_ids: ["bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "cccccccc-cccc-cccc-cccc-cccccccccccc"] }) });
+    assert.equal(fusion.status, 200);
+    assert.equal(calls.at(-1).path, "/api/v1/sessions/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/multimodal-analyses");
     const inbox = await fetch(origin + "/api/auth/notifications?unread=true&page=2", { headers: { Cookie: cookieHeader } });
     assert.equal(inbox.status, 200);
     assert.equal(calls.at(-1).path, "/api/v1/notifications?page=2&unread=true");

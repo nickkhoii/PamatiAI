@@ -165,7 +165,7 @@ Order: database health -> migrations -> baseline seed -> API health -> frontend.
 
 ## 17. Privacy controls
 
-Students inspect inventories, hide conversations/check-ins, withdraw consent, request export/erasure and see retention holds. Administrators review request metadata without content access. **Request review does not physically export/erase all records and backups.** Verified institutional fulfillment remains required. [Privacy](pamati-ai/docs/PRIVACY.md).
+Students inspect inventories, read saved modality analyses, combine eligible sources, download their available personal records as JSON, hide conversations/check-ins, withdraw consent, request institutional export/erasure and see retention holds. Personal downloads exclude raw media, privileged case notes and unavailable source content. Administrators review request metadata without content access. **Request review does not physically export/erase all records and backups.** Verified institutional fulfillment remains required. [Privacy](pamati-ai/docs/PRIVACY.md).
 
 ## 18. Consent model
 

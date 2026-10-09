@@ -17,6 +17,7 @@ const studentActions: Record<string, string> = {
   consent: "consent", "consent-history": "consent/history", "withdraw-consent": "consent",
   privacy: "privacy", records: "records", conversations: "conversations", trends: "trends",
   longitudinal: "longitudinal",
+  analyses: "analyses",
   "safety-referral": "referrals", "safety-follow-ups": "safety-follow-ups", "safety-choice": "safety-follow-ups",
   "data-controls": "data-controls", conversation: "conversations", "chat-turn": "conversations", "new-conversation": "conversations", "hide-conversation": "conversations", "support-request": "support-requests"
 };
@@ -46,6 +47,11 @@ async function studentPath(action: string, request: NextRequest, token: string |
     const offset = Math.max(0, Math.min(100000, Number(request.nextUrl.searchParams.get("offset") ?? 0) || 0));
     path += `?category=${category}&offset=${Math.floor(offset)}`;
   }
+  if (action === "analyses") {
+    const query = new URLSearchParams();
+    for (const key of ["page", "limit", "modality"]) if (request.nextUrl.searchParams.has(key)) query.set(key, request.nextUrl.searchParams.get(key)!);
+    path += `?${query}`;
+  }
   return path;
 }
 
@@ -71,7 +77,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ac
   const { action } = await context.params;
   let path = safetyPath(action, request) ?? actions[action];
   if (!path && !studentActions[action]) return NextResponse.json({ detail: "Not found" }, { status: 404 });
-  if (["privacy", "records", "conversations", "trends", "consent-history", "onboarding", "conversation", "safety-queue", "safety-resources", "safety-workflow", "safety-follow-ups"].includes(action)) return NextResponse.json({ detail: "Method not allowed" }, { status: 405 });
+  if (["privacy", "records", "analyses", "conversations", "trends", "consent-history", "onboarding", "conversation", "safety-queue", "safety-resources", "safety-workflow", "safety-follow-ups"].includes(action)) return NextResponse.json({ detail: "Method not allowed" }, { status: 405 });
   if (Number(request.headers.get("content-length") ?? 0) > 32768) return NextResponse.json({ detail: "Request too large" }, { status: 413 });
   let body;
   try {
@@ -112,7 +118,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ac
 
 export async function GET(request: NextRequest, context: { params: Promise<{ action: string }> }) {
   const { action } = await context.params;
-  if (!["profile", "onboarding", "consent", "consent-history", "privacy", "records", "conversations", "trends", "longitudinal", "data-controls", "conversation", "safety-queue", "safety-workflow", "safety-resources", "safety-follow-ups"].includes(action)) return NextResponse.json({ detail: "Not found" }, { status: 404 });
+  if (!["profile", "onboarding", "consent", "consent-history", "privacy", "records", "analyses", "conversations", "trends", "longitudinal", "data-controls", "conversation", "safety-queue", "safety-workflow", "safety-resources", "safety-follow-ups"].includes(action)) return NextResponse.json({ detail: "Not found" }, { status: 404 });
   const token = request.cookies.get(accessCookie)?.value;
   if (action === "safety-resources") {
     try { const upstream = await fetch(`${origin()}/api/v1/safety/resources`, { cache: "no-store", signal: AbortSignal.timeout(5000) });

@@ -106,3 +106,7 @@ Production requires TLS, explicit host/origin configuration, protected secret de
 ## Reference guidance
 
 The logging choices follow [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html); request/access/rate boundaries were checked against [OWASP REST Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html). Browser header choices are informed by [OWASP HTTP Headers Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html), and nonce propagation/dynamic rendering use the [Next.js CSP guide](https://nextjs.org/docs/app/guides/content-security-policy). These references inform implementation, not a compliance claim.
+
+## Follow-up personal access verification
+
+New owner-only analysis/history and JSON download routes use existing authoritative access and retention checks. Counselor, administrator and other-student access is denied; withdrawal does not become a processing authorization. Downloads are bounded, rate-limited, no-store attachments and exclude privileged case notes, raw media and unavailable content. Eight additional SQLite/MySQL regression cases passed; the complete suite now has 631 passing cases and one expected SQLite skip. Frontend gateway tests verify server-derived ownership and Origin protection for fusion. Actual Edge browser checks cover student, counselor and administrator flows; these do not replace independent penetration, accessibility or production load testing.

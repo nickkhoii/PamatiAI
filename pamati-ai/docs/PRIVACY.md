@@ -57,3 +57,7 @@ The design is informed by the Philippine National Privacy Commission's [Data Pri
 ## Conversational processing
 
 Student chat uses text consent independently of audio, visual, longitudinal and research choices. The default provider runs predefined responses locally. A configured model endpoint receives only the system prompt and up to 20 recent text messages from that conversation. Provider/host/model/version are disclosed and saved in consent evidence; changing the processor requires renewed acknowledgment. Consent changes during generation discard the reply before publication but cannot retract processing already performed. Hiding history does not erase retained records. See [CONVERSATION.md](CONVERSATION.md).
+
+## Direct personal download
+
+The authenticated student can download available own records from `/student/privacy`, including after withdrawing consent. `/api/v1/students/{student_id}/data-download` independently checks ownership and excludes other identities, hidden/expired/deleted source content, raw media, credentials and privileged case notes. It returns a private JSON attachment, records only access metadata and enforces persistent rate limits. Limits are 10,000 rows per bounded collection, 10,000 messages total and 8 MB serialized output; oversized downloads return an explicit error and direct the student to an institutional request. The download contains sensitive personal data and must be stored privately. It neither reactivates processing nor fulfills broader institutional disclosure/erasure requests.
