@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+@theme {
+  --color-teal-50: #f4f1ff;
+  --color-teal-100: #e8e2ff;
+  --color-teal-600: #7255df;
+  --color-teal-700: #6346c9;
+  --color-teal-800: #5239ab;
+  --color-teal-900: #372775;
+}
+
 input:focus-visible, textarea:focus-visible, summary:focus-visible {
   outline: 2px solid #0f766e;
   outline-offset: 3px;
@@ -23,3 +32,136 @@ a:focus-visible, button:focus-visible { outline: 3px solid #0f766e; outline-offs
 select:focus-visible{outline:3px solid #0f766e;outline-offset:3px}
 @media(max-width:800px){.dashboard-layout{grid-template-columns:1fr}.dashboard-nav{flex-direction:row;overflow-x:auto;padding:.75rem}.dashboard-nav button{flex-shrink:0}.dashboard-main{padding:1rem}.dashboard-header{padding:1rem}.dashboard-main h1{font-size:1.65rem}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+/* Reference-inspired visual system, shared by existing working workflows. */
+:root { --ink: #142044; --muted: #596487; --accent: #6749db; --line: #e2e6fb; }
+body { background: radial-gradient(ellipse at top left, #ecefff, transparent 65%), #f8f9ff; color: var(--ink); font-family: "Segoe UI", Arial, sans-serif; }
+* { box-sizing: border-box; }
+button, a, input, select, textarea, summary { -webkit-tap-highlight-color: transparent; }
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid #7957ed; outline-offset: 4px; }
+button, select, summary { min-height: 44px; }
+button { touch-action: manipulation; }
+.dashboard-header { max-width: 1500px; margin: auto; border: 0; background: transparent; padding: 1.5rem 2rem; gap: 1rem; }
+.brand { display: inline-flex; align-items: center; gap: .35rem; color: #111d43; font-size: 2rem; letter-spacing: -.06em; }
+.brand span, .sidebar-brand span { color: #8569ff; }
+.pamati-mark { width: 38px; height: 38px; flex-shrink: 0; color: #7957ff; margin-right: .3rem; }
+.dashboard-header > span { color: var(--muted); font-weight: 600; }
+.dashboard-header > a:last-child { padding: .7rem 1rem; border: 1px solid var(--line); border-radius: 999px; background: white; font-size: .9rem; }
+.dashboard-layout { max-width: 1460px; min-height: calc(100dvh - 120px); grid-template-columns: 245px minmax(0,1fr); border: 1px solid #d5daf2; border-radius: 22px; overflow: clip; background: #f7f8ff; box-shadow: 0 12px 45px #24306412; margin: 0 auto 2rem; }
+.dashboard-nav { background: linear-gradient(160deg,#142044,#101a36); padding: 1.5rem 1rem; color: #f6f7ff; gap: .4rem; }
+.sidebar-brand { display: flex; align-items: center; gap: .25rem; color: white; font-size: 1.5rem; font-weight: 700; padding: .25rem .5rem 1.5rem; }
+.dashboard-nav button, .sidebar-link { color: #eff1ff; font-size: .92rem; border-radius: 10px; padding: .9rem 1rem; text-decoration: none; text-align: left; }
+.dashboard-nav button:hover, .sidebar-link:hover { background: #ffffff12; }
+.dashboard-nav button[aria-current] { background: linear-gradient(110deg,#6255e3,#7957ee); color: white; box-shadow: 0 4px 15px #0002; }
+.sidebar-reassurance { display: grid; gap: .35rem; padding: 1rem; background: #ffffff0f; border: 1px solid #ffffff14; border-radius: 14px; margin-top: auto; font-size: .9rem; }
+.sidebar-reassurance span { color: #ccd3f2; font-size: .8rem; }
+.dashboard-main { padding: 1.7rem 2rem; overflow-wrap: anywhere; }
+.dashboard-main h1 { font-size: 1.65rem; letter-spacing: -.035em; margin-bottom: .5rem; }
+.dashboard-main > .eyebrow { margin: 0 0 .35rem; }
+.dashboard-main > p { color: var(--muted); max-width: 85ch; font-size: .92rem; }
+.dashboard-main a { color: #5b3bc4; }
+.dashboard-main button, .dashboard-button { border-color: #dce0f5; border-radius: 10px; color: var(--ink); box-shadow: 0 2px 5px #33448804; }
+.dashboard-main button:hover { background: #f0ecff; border-color: #b9a9f4; }
+.dashboard-main input, .dashboard-main select, .dashboard-main textarea { border-color: #cbd1ec; border-radius: 9px; color: var(--ink); min-height: 44px; }
+.dashboard-main input::placeholder, .dashboard-main textarea::placeholder { color: #697598; }
+.dashboard-card { border-color: var(--line); box-shadow: 0 4px 14px #34438905; border-radius: 16px; }
+.dashboard-filters { background: #fff9; border-radius: 14px; padding: 1rem; margin: 1.25rem 0; border: 1px solid var(--line); }
+.dashboard-table th { background: #f3f4ff; color: #475178; font-size: .78rem; letter-spacing: .02em; }
+.dashboard-table td, .dashboard-table th { border-color: #edf0fb; }
+.dashboard-table tbody tr:hover { background: #faf9ff; }
+.dashboard-table td > code { font-size: .75rem; color: #667092; }
+.dashboard-main details > summary { cursor: pointer; padding: .65rem .2rem; }
+.resource-grid li { background: #fdfdff; border-color: var(--line); }
+.eyebrow { color: #615788; font-size: .88rem; }
+.student-welcome { margin-top: 1.25rem; }
+.workspace-icon { width: 20px; height: 20px; flex-shrink: 0; }
+.dashboard-nav button, .sidebar-link { display: flex; align-items: center; gap: .7rem; }
+@media (min-width: 1250px) {
+  .student-welcome { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); grid-template-areas: "dialog trends" "actions trends"; gap: 1rem; align-items: start; }
+  .welcome-dialog { grid-area: dialog; gap: .75rem; padding: 1.25rem; }
+  .welcome-dialog .pamati-mascot { width: 105px; }
+  .welcome-actions { grid-area: actions; grid-template-columns: repeat(2,minmax(0,1fr)); margin-top: 0; }
+  .welcome-trends { grid-area: trends; min-width: 0; }
+  .welcome-trends .dashboard-card { margin: 0; }
+}
+.welcome-dialog { display: flex; align-items: center; gap: 1.75rem; padding: 1.75rem; border: 1px solid #e2e3ff; border-radius: 20px; background: linear-gradient(115deg,#eceeff,#ffffff); }
+.welcome-dialog > div { flex: 1; min-width: 0; }
+.welcome-dialog h2 { font-size: 1.4rem; }
+.pamati-mascot { display: block; width: 165px; max-width: 100%; flex-shrink: 0; margin: 0 auto; }
+.pamati-mascot.compact { width: 70px; }
+.primary-link { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; background: linear-gradient(110deg,#644bdf,#7652ec); color: white!important; padding: .8rem 1.15rem; border-radius: 12px; text-decoration: none!important; font-weight: 600; margin-top: .7rem; box-shadow: 0 4px 12px #7055dc20; }
+.primary-link:hover { background: #5335bb; }
+.secondary-link { display: inline-flex; padding: .8rem 1rem; color: #5437b1; text-decoration: underline; }
+.welcome-actions { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .75rem; margin-top: 1rem; }
+.welcome-actions button { min-height: 62px; font-weight: 600; font-size: .85rem; }
+.welcome-trends .dashboard-card { background: white; }
+.landing-hero { display: flex; align-items: center; gap: 3rem; padding: 2rem; background: linear-gradient(120deg,#eeefff,#fff); border: 1px solid var(--line); border-radius: 24px; }
+.landing-hero .pamati-mascot { width: 220px; }
+.landing-hero h1 { color: var(--ink); }
+.pamati-chat { background: #f5f6ff!important; }
+.pamati-chat > aside { background: linear-gradient(160deg,#152144,#111b36); border-color: #243257; color: white; }
+.pamati-chat > aside > a { display: inline-flex; align-items: center; color: white; }
+.pamati-chat > aside p, .pamati-chat > aside h2, .pamati-chat > aside span { color: #cdd4f3; }
+.pamati-chat > aside nav { border-color: #ffffff20; color: #e6e8ff; }
+.pamati-chat > aside nav button { color: #e6e8ff; }
+.pamati-chat > aside nav button:hover { background: #ffffff14; }
+.pamati-chat > aside nav button[aria-current] { background: #6651d4; color: white; }
+.pamati-chat > aside > button { background: linear-gradient(100deg,#674de7,#7957ee); }
+.pamati-chat main > header { border-color: var(--line); }
+.pamati-chat form { border-color: #d9def7; background: white; box-shadow: 0 5px 20px #30397808; }
+.pamati-chat [role="log"] article.justify-end > div { background: linear-gradient(120deg,#7554db,#6446c9); }
+.pamati-chat [role="log"] article.justify-start > div { border-color: var(--line); box-shadow: 0 3px 12px #30397805; }
+.pamati-chat textarea:focus-visible { outline-offset: 0; }
+.standalone-workspace { margin-top: 1.5rem; margin-bottom: 1.5rem; background: #ffffffdd; border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 8px 30px #24306408; overflow-wrap: anywhere; }
+.standalone-workspace nav { flex-wrap: wrap; }
+.standalone-workspace input:not([type="checkbox"]), .standalone-workspace select, .standalone-workspace textarea { border: 1px solid #cbd1ec; border-radius: 9px; }
+.standalone-workspace h1 { letter-spacing: -.035em; }
+.auth-screen { min-height: 100dvh; display: grid; place-items: center; padding: 2rem; }
+.auth-panel { display: grid; grid-template-columns: 1fr 1fr; width: min(100%,1000px); background: white; border: 1px solid var(--line); border-radius: 26px; overflow: hidden; box-shadow: 0 18px 60px #26356710; }
+.auth-welcome { display: flex; flex-direction: column; gap: 2rem; padding: 2.5rem; background: linear-gradient(145deg,#eeefff,#f8f5ff); }
+.auth-introduction { flex: 1; text-align: center; }
+.auth-introduction h2 { font-size: 1.9rem; font-weight: 650; letter-spacing: -.04em; line-height: 1.3; margin-top: .6rem; }
+.auth-introduction .pamati-mascot { width: 200px; margin: 1.2rem auto; }
+.auth-introduction > p:last-child { color: var(--muted); line-height: 1.7; }
+.auth-safeguard { padding: 1rem; border: 1px solid #dedafa; background: #ffffff80; border-radius: 12px; color: #555879; font-size: .8rem; line-height: 1.6; }
+.auth-signin { padding: 3.5rem 2.5rem; align-self: center; }
+.auth-signin h1 { font-size: 2.2rem; font-weight: 650; letter-spacing: -.04em; margin: .4rem 0; }
+.auth-description { color: var(--muted); margin-bottom: 2rem; }
+.auth-signin label { font-size: .9rem; font-weight: 600; }
+.auth-signin input { min-height: 50px; border-color: #cbd1ec; border-radius: 10px; background: #f9faff; font-size: 1rem; }
+.auth-submit { min-height: 48px; cursor: pointer; }
+.auth-signin .auth-submit { width: 100%; background: linear-gradient(110deg,#6546d1,#7956e8); border-radius: 10px; font-weight: 600; }
+.auth-signin nav { flex-wrap: wrap; font-size: .88rem; }
+.auth-signin nav a:hover { text-decoration: underline; }
+.auth-footnote { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line); font-size: .78rem; line-height: 1.6; color: var(--muted); }
+.auth-password-field { position: relative; }
+.auth-password-field input { padding-right: 4.5rem; }
+.password-toggle { position: absolute; right: .5rem; top: .25rem; min-height: 44px; padding: .5rem; font-size: .8rem; color: #5c3ab7; cursor: pointer; background: transparent; }
+@media(max-width:650px) {
+  .auth-screen { padding: 1rem; }
+  .auth-panel { grid-template-columns: 1fr; border-radius: 20px; }
+  .auth-welcome { padding: 1.5rem; gap: 1rem; }
+  .auth-introduction { display: flex; align-items: center; justify-content: space-between; text-align: left; gap: 1rem; }
+  .auth-introduction h2 { font-size: 1.2rem; margin: 0; }
+  .auth-introduction .pamati-mascot { width: 75px; margin: 0; }
+  .auth-introduction > p { display: none; }
+  .auth-safeguard { font-size: .75rem; }
+  .auth-signin { padding: 1.75rem 1.5rem; }
+}
+@media (max-width: 800px) { .standalone-workspace { margin: .5rem; padding: 1.25rem; } }
+@media (max-width: 1100px) { .dashboard-layout { margin: 0 1rem 1.5rem; } .welcome-actions { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 800px) {
+  .dashboard-header { padding: 1rem; } .brand { font-size: 1.5rem; }
+  .dashboard-header > span { display: none; }
+  .dashboard-layout { grid-template-columns: 1fr; border-radius: 16px; margin: 0 .5rem 1rem; }
+  .dashboard-nav { flex-direction: row; padding: .65rem; overflow-x: auto; gap: .4rem; scrollbar-width: thin; }
+  .dashboard-nav button, .sidebar-link { flex-shrink: 0; white-space: nowrap; padding: .75rem; }
+  .sidebar-brand, .sidebar-reassurance { display: none; }
+  .dashboard-main { padding: 1rem; } .dashboard-main h1 { font-size: 1.45rem; }
+  .welcome-dialog { gap: 1rem; padding: 1.2rem; flex-direction: column; text-align: center; }
+  .welcome-dialog .pamati-mascot { width: 120px; }
+  .welcome-actions { gap: .5rem; }
+  .landing-hero { flex-direction: column; gap: 1rem; padding: 1.5rem; text-align: center; }
+  .landing-hero .pamati-mascot { width: 150px; }
+  .landing-hero h1 { font-size: 2rem; }
+}

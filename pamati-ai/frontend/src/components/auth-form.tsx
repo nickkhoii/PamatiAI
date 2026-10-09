@@ -7,6 +7,7 @@ export function AuthForm({ action }: { action: string }) {
   const [token, setToken] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   useEffect(() => {
     setToken(new URLSearchParams(window.location.hash.slice(1)).get("token") ?? "");
@@ -44,12 +45,12 @@ export function AuthForm({ action }: { action: string }) {
   return <div className="space-y-5">
     {profile && <p>{profile.email} ? {profile.roles.join(", ")}</p>}
     {["activate", "reset", "invite"].includes(action) && !token && <p>Open the complete link from your institutional email to continue.</p>}
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="space-y-4" aria-busy={busy}>
       {(registration || action === "login" || action === "forgot-password") && <label className="block">Institutional email<input name="email" type="email" autoComplete="email" required maxLength={254} className="mt-1 block w-full rounded border p-3" /></label>}
       {(registration || action === "profile") && <label className="block">Display name<input name="display_name" defaultValue={profile?.display_name} required maxLength={120} className="mt-1 block w-full rounded border p-3" /></label>}
       {action === "change-password" && <label className="block">Current password<input name="current_password" type="password" autoComplete="current-password" required maxLength={128} className="mt-1 block w-full rounded border p-3" /></label>}
-      {(newPassword || action === "login") && <label className="block">{newPassword ? "New password (at least 15 characters)" : "Password"}<input name={action === "change-password" ? "new_password" : "password"} type="password" autoComplete={newPassword ? "new-password" : "current-password"} required minLength={newPassword ? 15 : 1} maxLength={128} className="mt-1 block w-full rounded border p-3" /></label>}
-      <button disabled={busy || (["activate", "reset", "invite"].includes(action) && !token)} className="rounded bg-teal-800 px-5 py-3 text-white disabled:opacity-50">{busy ? "Please wait?" : action === "activate" ? "Activate" : "Continue"}</button>
+      {(newPassword || action === "login") && <div><label className="block" htmlFor="auth-password">{newPassword ? "New password (at least 15 characters)" : "Password"}</label><div className="auth-password-field"><input id="auth-password" name={action === "change-password" ? "new_password" : "password"} type={showPassword ? "text" : "password"} autoComplete={newPassword ? "new-password" : "current-password"} required minLength={newPassword ? 15 : 1} maxLength={128} className="mt-1 block w-full rounded border p-3" /><button type="button" className="password-toggle" aria-pressed={showPassword} aria-controls="auth-password" onClick={() => setShowPassword(v => !v)}>{showPassword ? "Hide" : "Show"}<span className="sr-only"> password</span></button></div></div>}
+      <button disabled={busy || (["activate", "reset", "invite"].includes(action) && !token)} className="auth-submit rounded bg-teal-800 px-5 py-3 text-white disabled:opacity-50">{busy ? "Please wait..." : action === "activate" ? "Activate" : "Continue"}</button>
     </form>
     <p role="status" aria-live="polite">{message}</p>
     {action === "profile" && <div className="flex flex-wrap gap-4"><button disabled={busy} onClick={() => sessionAction("refresh")}>Renew session</button><button disabled={busy} onClick={() => sessionAction("logout")}>Sign out</button><button disabled={busy} onClick={() => sessionAction("logout-all")}>Sign out everywhere</button><a href="/auth/change-password">Change password</a>{profile?.roles.includes("STUDENT") && <a href="/student">Student dashboard</a>}{profile?.roles.includes("COUNSELOR") && <a href="/counselor">Counselor dashboard</a>}{profile?.roles.includes("ADMIN") && <a href="/admin">Admin dashboard</a>}{profile?.roles.includes("STUDENT") && <><a href="/student/chat">Open chat</a><a href="/student/onboarding">Onboarding and consent</a><a href="/student/privacy">Privacy and records</a></>}</div>}
