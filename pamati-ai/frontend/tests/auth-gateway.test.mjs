@@ -17,6 +17,8 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
       response.end(JSON.stringify({ access_token: "test-access-secret", refresh_token: "test-refresh-secret", expires_in: 900 }));
     } else if (request.url === "/api/v1/me") {
       response.end(JSON.stringify({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", email: "test@example.com", display_name: "Test", roles: ["STUDENT"] }));
+    } else if (request.url.startsWith("/api/v1/dashboard/")) {
+      response.end(JSON.stringify({ items: [], total: 0, page: 1, limit: 12 }));
     } else if (request.url.startsWith("/api/v1/conversations/") && request.method !== "DELETE") {
       response.end(JSON.stringify({ messages: [], next_offset: null }));
     } else if (request.url.startsWith("/api/v1/students/") && request.method !== "DELETE") {
@@ -56,6 +58,22 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
     const profile = await fetch(origin + "/api/auth/profile", { headers: { Cookie: cookieHeader } });
     assert.equal(profile.status, 200);
     assert.equal(calls.at(-1).authorization, "Bearer test-access-secret");
+    const dashboard = await fetch(origin + "/api/auth/dashboard?role=STUDENT&collection=conversations&q=reflection&page=2&start=2026-10-01", { headers: { Cookie: cookieHeader } });
+    assert.equal(dashboard.status, 200);
+    assert.equal(calls.at(-1).path, "/api/v1/dashboard/STUDENT/conversations?q=reflection&start=2026-10-01&page=2");
+    const beforeForgedDashboard = calls.length;
+    const forgedDashboard = await fetch(origin + "/api/auth/dashboard?op=check-in", { method: "POST", headers: { Origin: "https://attacker.example", Cookie: cookieHeader }, body: "{}" });
+    assert.equal(forgedDashboard.status, 403);
+    assert.equal(calls.length, beforeForgedDashboard);
+    const checkin = await fetch(origin + "/api/auth/dashboard?op=check-in", { method: "POST", headers: { Origin: origin, Cookie: cookieHeader, "Content-Type": "application/json" }, body: JSON.stringify({ feeling: "mixed" }) });
+    assert.equal(checkin.status, 200);
+    assert.equal(calls.at(-1).path, "/api/v1/dashboard/check-ins");
+    assert.deepEqual(calls.at(-1).body, { feeling: "mixed" });
+    for (const route of ["student", "counselor", "admin"]) {
+      const page = await fetch(origin + "/" + route);
+      assert.equal(page.status, 200);
+      assert.match(await page.text(), /aria-label="Dashboard sections"/);
+    }
     const records = await fetch(origin + "/api/auth/records?category=research&student_id=bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", { headers: { Cookie: cookieHeader } });
     assert.equal(records.status, 200);
     assert.equal(calls.at(-1).path, "/api/v1/students/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/records?category=research&offset=0");

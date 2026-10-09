@@ -13,6 +13,7 @@ from app.auth_routes import router as auth_router
 from app.config import get_settings
 from app.conversation_routes import router as conversation_router
 from app.db import engine
+from app.dashboard_routes import router as dashboard_router
 from app.longitudinal_routes import router as longitudinal_router
 from app.multimodal_routes import router as multimodal_router
 from app.privacy_routes import router as privacy_router
@@ -44,6 +45,7 @@ app.include_router(visual_router)
 app.include_router(multimodal_router)
 app.include_router(longitudinal_router)
 app.include_router(safety_router)
+app.include_router(dashboard_router)
 
 
 @app.middleware("http")

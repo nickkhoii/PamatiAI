@@ -48,7 +48,11 @@ export function StudentChat() {
   useEffect(() => {
     let active = true;
     Promise.all([api("conversations"), api("onboarding")]).then(([rows, onboarding]) => {
-      if (active) { setHistory(rows); setConsent(onboarding.consent); setAcknowledged(onboarding.completed); }
+      if (active) {
+        setHistory(rows); setConsent(onboarding.consent); setAcknowledged(onboarding.completed);
+        const requested = new URLSearchParams(window.location.search).get("conversation");
+        if (requested && /^[0-9a-f-]{36}$/i.test(requested)) void open(requested);
+      }
     }).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);

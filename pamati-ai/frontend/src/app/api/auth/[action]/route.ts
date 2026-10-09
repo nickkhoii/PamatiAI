@@ -41,7 +41,7 @@ async function studentPath(action: string, request: NextRequest, token: string |
   }
   if (action === "records") {
     const category = request.nextUrl.searchParams.get("category") ?? "conversations";
-    if (!["conversations", "analysis", "research", "consent_audit"].includes(category)) return null;
+    if (!["conversations", "analysis", "research", "consent_audit", "check_ins"].includes(category)) return null;
     const offset = Math.max(0, Math.min(100000, Number(request.nextUrl.searchParams.get("offset") ?? 0) || 0));
     path += `?category=${category}&offset=${Math.floor(offset)}`;
   }

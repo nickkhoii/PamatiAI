@@ -21,6 +21,7 @@ from app.models import (
     SentimentTrend,
     StudentProfile,
     User,
+    WellbeingCheckIn,
     utcnow,
 )
 from app.resource_routes import receipt_view
@@ -95,6 +96,7 @@ def privacy(student_id: str, db: DB, user: CurrentUser):
         ("media", MediaAsset),
         ("research", ResearchDatasetRecord),
         ("consent", ConsentRecord),
+        ("check_ins", WellbeingCheckIn),
     ]:
         result["counts"][name] = db.scalar(
             select(func.count()).select_from(cls).where(cls.student_id == student_id)
@@ -109,6 +111,7 @@ def records(student_id: str, category: Category, db: DB, user: CurrentUser, offs
     authorize_student(db, user, "privacy:manage", student_id)
     cls = {
         "conversations": Conversation,
+        "check_ins": WellbeingCheckIn,
         "analysis": ModelInference,
         "research": ResearchDatasetRecord,
         "consent_audit": ConsentRecord,
@@ -124,7 +127,7 @@ def records(student_id: str, category: Category, db: DB, user: CurrentUser, offs
     )
     result = []
     for row in rows[:50]:
-        snapshot = row.retention_snapshot if category == "conversations" else None
+        snapshot = row.retention_snapshot if category in {"conversations", "check_ins"} else None
         if category == "consent_audit" and row.disclosure_snapshot:
             snapshot = row.disclosure_snapshot.get("retention")
         if category in {"analysis", "research"}:
@@ -140,6 +143,8 @@ def records(student_id: str, category: Category, db: DB, user: CurrentUser, offs
         }
         if category == "conversations":
             item.update(status=row.status, hidden=row.deleted_at is not None)
+        elif category == "check_ins":
+            item.update(status=row.feeling, hidden=row.deleted_at is not None)
         elif category == "analysis":
             item.update(modality=row.modality, status=row.processing_status)
         elif category == "research":

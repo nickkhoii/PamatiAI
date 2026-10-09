@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from app.models import RetentionHold, SystemSetting, utcnow
 
-Category = Literal["conversations", "analysis", "research", "consent_audit"]
+Category = Literal["conversations", "analysis", "research", "consent_audit", "check_ins"]
 
 
 class RetentionPolicy(BaseModel):
@@ -44,6 +44,7 @@ def deadline(db, student_id, category: Category, created_at: datetime, *, snapsh
     saved = RetentionPolicy.model_validate(snapshot) if snapshot else current
     field = {
         "conversations": "conversation_days",
+        "check_ins": "conversation_days",
         "analysis": "analysis_days",
         "research": "research_days",
         "consent_audit": "consent_audit_days",

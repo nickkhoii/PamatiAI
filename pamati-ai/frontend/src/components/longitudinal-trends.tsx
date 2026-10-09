@@ -56,9 +56,9 @@ export function LongitudinalTrends({ reviewer = false }: { reviewer?: boolean })
     <p>Experimental estimates show changes across interactions. They are not diagnoses, a mental-health score, or evidence of crisis. Observable facial expression does not directly reveal internal feelings.</p>
     {reviewer && <label className="block">Assigned student record ID<input className="ml-3 rounded border p-2" value={student} disabled={busy} onChange={e => { setStudent(e.target.value); setSeries([]); }} /></label>}
     <div className="flex gap-3"><button disabled={busy} className="rounded border px-4 py-2" onClick={() => void load()}>Load saved trends</button><button disabled={busy} className="rounded border px-4 py-2" onClick={() => void load(true)}>Update last 90 days</button></div>
-    <p role="status">{busy ? "Loading trends…" : notice}</p>
+    <p role="status">{busy ? "Loading trendsâ€¦" : notice}</p>
     {series.length > 0 && <>
-      <label className="block">Observation series <select className="max-w-full rounded border p-2" value={selection} onChange={e => setSelection(e.target.value)}>{series.map(s => <option key={s.id} value={s.id}>{s.dimension.replaceAll("_", " ")} · {s.model}</option>)}</select></label>
+      <label className="block">Observation series <select className="max-w-full rounded border p-2" value={selection} onChange={e => setSelection(e.target.value)}>{series.map(s => <option key={s.id} value={s.id}>{s.dimension.replaceAll("_", " ")} Â· {s.model}</option>)}</select></label>
       <label className="block">Summary interval <select className="rounded border p-2" value={resolution} onChange={e => setResolution(e.target.value)}><option value="daily">Daily</option><option value="weekly">Weekly (Monday start)</option></select></label>
       <p>Model estimates are shown in blue{resolution === "daily" ? "; the dashed gray line is your prior-history baseline" : ""}. Gaps mean no eligible data. Dates use UTC. {polarity ? "Polarity ranges from -1 to +1." : "Values are model probabilities, not measured emotional prevalence."}</p>
       <svg viewBox="0 0 700 250" className="w-full" role="img" aria-label="Observation trend with gaps for missing data. Numerical values are available in the table below.">

@@ -12,6 +12,7 @@ from app.models import (
     MediaAsset,
     ModelInference,
     ResearchDatasetRecord,
+    WellbeingCheckIn,
     utcnow,
 )
 from app.retention import active_holds, deadline, retention_policy
@@ -21,13 +22,14 @@ def report(db):
     result = {}
     for category, cls in [
         ("conversations", Conversation),
+        ("check_ins", WellbeingCheckIn),
         ("analysis", ModelInference),
         ("research", ResearchDatasetRecord),
         ("consent_audit", ConsentRecord),
     ]:
         due, held = 0, 0
         for row in db.scalars(select(cls)):
-            snapshot = row.retention_snapshot if category == "conversations" else None
+            snapshot = row.retention_snapshot if category in {"conversations", "check_ins"} else None
             receipt = (
                 row
                 if category == "consent_audit"

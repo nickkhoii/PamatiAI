@@ -680,6 +680,16 @@ class SupportRequest(Entity, Base):
     status: Mapped[str] = mapped_column(String(20), default="requested")
 
 
+class WellbeingCheckIn(Entity, SoftDelete, Base):
+    __tablename__ = "wellbeing_check_ins"
+    student_id: Mapped[str] = reference("student_profiles.user_id", index=True)
+    retention_snapshot: Mapped[dict | None] = mapped_column(JSON)
+    feeling: Mapped[str] = mapped_column(
+        choice("check_in_feeling", "comfortable", "mixed", "difficult", "prefer_not_to_say")
+    )
+    # Self-report only; never an inferred diagnosis or risk score.
+
+
 class DataControlRequest(Entity, Base):
     __tablename__ = "data_control_requests"
     student_id: Mapped[str] = reference("student_profiles.user_id", index=True)

@@ -6,6 +6,40 @@ Production-oriented research prototype foundation for higher-education student s
 
 ## What works now
 
+Role dashboards are available at `/student`, `/counselor` (also `/reviewer`), and
+`/admin`. Apply migration `0009_dashboards` with `alembic upgrade head` from
+`backend` before starting an existing installation. All lists and totals come
+from the database; unpopulated databases show empty states.
+
+Students can search recent conversations, visualize saved experimental trends,
+record optional private well-being check-ins, manage consent and privacy, request
+human support, and browse institutional resources. Check-ins are self-reports,
+never analyzed or scored by AI. They use the conversation retention period,
+are included in the personal privacy inventory and retention-review report, and
+can be hidden independently of AI consent. Export/deletion requests still require
+institutional fulfillment, including check-ins.
+
+Counselors see only active assigned students with current reviewer-access consent.
+Their workspace separates **AI-generated observations** from **human-reviewed
+assessments**, with risk-source context, append-only review notes, referral offers,
+and support-request acknowledgement/closure. Saved trends can be refreshed using
+the existing consent-aware longitudinal workflow.
+
+Administrators can search users, change roles/account activation, assign or revoke
+counselors, inspect role permissions and registered model configuration, edit
+supported system/retention settings, read audit logs, and maintain database-backed
+institutional resources. Model version records are immutable research provenance;
+runtime model selection remains in deployment configuration and requires
+redeployment. The institutional resource editor accepts a JSON `resources` array
+of `{id, label, description, url}` entries. Safety contacts and referral services
+remain governed by the existing validated safety deployment configuration.
+
+Lists support search, applicable status filters, inclusive UTC date ranges, and
+pagination. The UI includes responsive navigation, labeled forms, table captions,
+keyboard focus, accessible trend history, and loading/empty/error states. Browser
+mutations use the existing HTTP-only bearer-cookie bridge and Origin checks;
+backend authorization remains authoritative.
+
 Optional visual research architecture provides bounded image/frame sampling, replaceable
 observable-expression adapters, consent checks and temporary cleanup. It defaults to
 disabled, retains no raw images/video, and does not restrict text support when declined.
@@ -30,7 +64,7 @@ Longitudinal tracking provides interaction, daily and weekly summaries, rolling 
 
 Consented chat now routes configured explicit safety-language concerns to immediate local supportive guidance and a human-review workflow. Assigned reviewers use `/reviewer/safety`; students can view documented support offers. Apply database migration `0008_safety_workflow` before running against an existing database. See [SAFETY_PROTOCOL](docs/SAFETY_PROTOCOL.md) for policies, contact configuration, permissions and limitations.
 
-Authentication, institutional onboarding, informed consent, student privacy views, protected student/counselor/administrator APIs and conversational message submission are implemented. A compatible HTTP model adapter is available with mocked validation; no real model deployment has been evaluated. Domain notifications, physical erasure/export fulfillment and full staff workspaces remain planned. Institutional governance and operational integrations must be validated before onboarding real participants.
+Authentication, institutional onboarding, informed consent, student privacy views, protected student/counselor/administrator APIs and conversational message submission are implemented. A compatible HTTP model adapter is available with mocked validation; no real model deployment has been evaluated. Domain notifications and physical erasure/export fulfillment remain planned. Institutional governance and operational integrations must be validated before onboarding real participants.
 
 ## Docker development
 
