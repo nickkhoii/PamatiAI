@@ -26,6 +26,7 @@ from app.models import (
     User,
     WellbeingCheckIn,
 )
+from app.retention import retained
 from app.safety import signal_view, source_live
 
 router = APIRouter(prefix="/api/v1/dashboard", tags=["role dashboards"])
@@ -248,7 +249,12 @@ def listing(
         query = query.where(model.created_at < datetime.combine(end + timedelta(days=1), time()))
     query = query.order_by(model.created_at.desc(), model.id.desc())
     # Source liveness is domain logic: apply it before counting or paginating.
-    if model in {RiskSignal, HumanReview, ReferralRecord}:
+    if model in {Conversation, WellbeingCheckIn}:
+        category = "conversations" if model is Conversation else "check_ins"
+        rows = [r for r in db.scalars(query) if retained(db, r, category)]
+        total = len(rows)
+        rows = rows[(page - 1) * limit : page * limit]
+    elif model in {RiskSignal, HumanReview, ReferralRecord}:
         rows = list(db.scalars(query))
         rows = [
             r

@@ -16,6 +16,7 @@ from app.models import (
     SentimentTrend,
 )
 from app.persistence import ConsentDenied, current_consent
+from app.retention import retained
 from services.safety.policy import LiteralSafetyAnalyzer, SafetyPolicy, evaluate
 from services.safety.resources import SafetyResource
 
@@ -83,19 +84,19 @@ def source_live(db, signal):
         conversation = db.scalar(select(Conversation).where(Conversation.id == session.conversation_id)
                                  .with_for_update().execution_options(populate_existing=True)) if session else None
         return bool(message and not message.deleted_at and session and not session.deleted_at
-                    and conversation and not conversation.deleted_at)
+                    and retained(db, conversation, "conversations"))
     if signal.inference_id:
         inference = db.get(ModelInference, signal.inference_id, populate_existing=True)
-        if not inference or inference.deleted_at:
+        if not retained(db, inference, "analysis"):
             return False
         if inference.message_id:
             message = db.get(Message, inference.message_id, populate_existing=True)
             if not message or message.deleted_at:
                 return False
         session = db.get(InteractionSession, inference.session_id, populate_existing=True)
-        return bool(session and not session.deleted_at and not session.conversation.deleted_at)
+        return bool(session and not session.deleted_at and retained(db, session.conversation, "conversations"))
     trend = db.get(SentimentTrend, signal.trend_id, populate_existing=True)
-    return bool(trend and not trend.deleted_at)
+    return retained(db, trend, "analysis")
 
 
 def authorized_signal(db, user, signal_id, *, lock=True):

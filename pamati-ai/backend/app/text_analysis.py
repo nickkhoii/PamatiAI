@@ -9,6 +9,7 @@ from app import config
 from app.models import Message, ModelInference, ModelVersion, TextAnalysis
 from app.persistence import create_inference
 from app.processing import run_analysis
+from app.retention import retained
 
 
 def configured_models():
@@ -94,4 +95,5 @@ def results(db, message_id):
          "error_code": i.error_code, "result": a.labels if a else None,
          "language": a.language if a else None, "limitations": a.limitations if a else []}
         for i, m, a in rows
+        if retained(db, i, "analysis")
     ]

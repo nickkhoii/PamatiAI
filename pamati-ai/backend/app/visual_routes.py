@@ -4,7 +4,7 @@ import base64
 import binascii
 import json
 
-from ai.visual.validation import EncodedFrame, InvalidVisualInput
+from ai.visual.validation import EncodedFrame, InvalidVisualInput, validate_frames
 from fastapi import APIRouter, HTTPException, Request
 from starlette.concurrency import run_in_threadpool
 
@@ -12,6 +12,7 @@ from app import config
 from app.auth_dependencies import DB, CurrentUser, audit, authorize_student, throttle
 from app.models import InteractionSession, ModelInference
 from app.persistence import ConsentDenied
+from app.retention import retained
 from app.visual_analysis import analyze_visual, authorize_visual, result_view
 
 router = APIRouter(prefix="/api/v1", tags=["optional visual expression research"])
@@ -65,6 +66,9 @@ async def upload_visual(session_id: str, request: Request, db: DB, user: Current
         # Recheck before parsing a received sequence; inference rechecks before media work.
         authorize_visual(db, session_id, user.id)
         frames = parse_frames(data, content_type)
+        settings = config.get_settings()
+        validate_frames(frames, max_bytes=maximum, max_pixels=settings.visual_max_pixels,
+                        max_frames=settings.visual_max_input_frames, max_seconds=settings.visual_max_seconds)
         db.commit()
         inference_id = await run_in_threadpool(
             analyze_visual, db, session_id=session_id, student_id=user.id, frames=frames,
@@ -82,11 +86,11 @@ async def upload_visual(session_id: str, request: Request, db: DB, user: Current
 @router.get("/visual-analyses/{inference_id}")
 def get_visual_analysis(inference_id: str, db: DB, user: CurrentUser):
     row = db.get(ModelInference, inference_id)
-    if not row or row.deleted_at or row.modality != "visual":
+    if not retained(db, row, "analysis") or row.modality != "visual":
         raise HTTPException(404, "Visual analysis not found")
     authorize_student(db, user, "history:read", row.student_id)
     interaction = db.get(InteractionSession, row.session_id)
-    if not interaction or interaction.deleted_at or interaction.conversation.deleted_at:
+    if not interaction or interaction.deleted_at or not retained(db, interaction.conversation, "conversations"):
         raise HTTPException(404, "Session not found")
     result = result_view(db, row)
     audit(db, user.id, "visual_analysis.read", "inference", row.id)

@@ -23,7 +23,7 @@ from app.models import (
 )
 from app.persistence import ConsentDenied, create_inference, current_consent, retain_media
 from app.processing import run_analysis
-from app.retention import retention_policy
+from app.retention import retained, retention_policy
 
 
 def disclosure():
@@ -65,7 +65,7 @@ def authorize_audio(db, session_id, student_id):
         select(Conversation).where(Conversation.id == interaction.conversation_id)
         .with_for_update().execution_options(populate_existing=True)
     )
-    if not conversation or conversation.deleted_at or conversation.status != "open":
+    if not retained(db, conversation, "conversations") or conversation.status != "open":
         raise ConsentDenied("Conversation is unavailable")
     return receipt
 

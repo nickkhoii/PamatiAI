@@ -323,8 +323,9 @@ def test_sequence_sampling_and_upload_rejections(api, monkeypatch, tmp_path):
     assert upload(api, data=b"").status_code == 422
     assert upload(api, content_type="video/mp4").status_code == 415
     assert upload(api, data=b"{", content_type="application/json").status_code == 422
-    invalid = upload(api, data=b"invalid BMP").json()
-    assert invalid["status"] == "failed" and invalid["result"] is None
+    invalid = upload(api, data=b"invalid BMP")
+    assert invalid.status_code == 422
+    assert invalid.json()["detail"] == "Invalid visual frame envelope"
     assert list((tmp_path / "temporary").iterdir()) == []
 
 

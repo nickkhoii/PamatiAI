@@ -1,13 +1,13 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file="../.env", extra="ignore")
-    environment: str = "development"
+    model_config = SettingsConfigDict(env_file="../.env", extra="ignore", hide_input_in_errors=True)
+    environment: Literal["development", "test", "production"] = "development"
     public_registration_enabled: bool = False
     institutional_domains: list[str] = []
     access_token_minutes: int = Field(default=15, ge=1, le=60)
@@ -64,6 +64,28 @@ class Settings(BaseSettings):
     database_url: str = Field(default="mysql+pymysql://pamati:local-only@localhost:3306/pamati?charset=utf8mb4", repr=False)
     cors_origins: list[str] = ["http://localhost:3000"]
     allowed_hosts: list[str] = ["localhost", "127.0.0.1", "backend", "testserver"]
+
+    @model_validator(mode="after")
+    def production_boundaries(self):
+        if self.environment != "production":
+            return self
+        from urllib.parse import urlsplit
+
+        from sqlalchemy.engine import make_url
+
+        url = urlsplit(self.auth_public_url)
+        if url.scheme != "https" or not url.hostname or url.username or url.password or url.query or url.fragment:
+            raise ValueError("Production authentication requires a clean HTTPS public URL")
+        for origin in self.cors_origins:
+            parsed = urlsplit(origin)
+            if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
+                raise ValueError("Production CORS requires explicit HTTPS origins")
+        if not self.allowed_hosts or "*" in self.allowed_hosts:
+            raise ValueError("Production requires explicit allowed hosts")
+        database = make_url(self.database_url)
+        if not database.password or database.password in {"local-only", "pamati", "password"}:
+            raise ValueError("Replace the development database password before production")
+        return self
 
     @field_validator("conversation_endpoint")
     @classmethod

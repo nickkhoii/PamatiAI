@@ -8,6 +8,7 @@ from app.auth_routes import Input
 from app.models import InteractionSession, ModelInference
 from app.multimodal_fusion import analyze_fusion, result_view
 from app.persistence import ConsentDenied
+from app.retention import retained
 
 router = APIRouter(prefix="/api/v1", tags=["experimental multimodal fusion"])
 
@@ -39,11 +40,11 @@ def submit_fusion(session_id: str, body: FusionRequest, request: Request, db: DB
 @router.get("/multimodal-analyses/{inference_id}")
 def get_fusion(inference_id: str, db: DB, user: CurrentUser):
     row = db.get(ModelInference, inference_id)
-    if not row or row.deleted_at or row.modality != "multimodal":
+    if not retained(db, row, "analysis") or row.modality != "multimodal":
         raise HTTPException(404, "Multimodal analysis not found")
     authorize_student(db, user, "history:read", row.student_id)
     interaction = db.get(InteractionSession, row.session_id)
-    if not interaction or interaction.deleted_at or interaction.conversation.deleted_at:
+    if not interaction or interaction.deleted_at or not retained(db, interaction.conversation, "conversations"):
         raise HTTPException(404, "Session not found")
     result = result_view(db, row)
     audit(db, user.id, "multimodal_analysis.read", "inference", row.id)

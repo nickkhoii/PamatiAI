@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { boundedBody, BodyError } from "@/lib/bounded-body";
 export const dynamic = "force-dynamic";
 const uuid = /^[0-9a-f-]{36}$/i;
 function target(request: NextRequest, mutation: boolean) {
@@ -34,14 +35,14 @@ async function proxy(request: NextRequest, mutation: boolean) {
   const path = target(request, mutation);
   if (!path) return NextResponse.json({ detail: "Not found" }, { status: 404 });
   try {
-    const body = mutation ? await request.text() : undefined;
+    const body = mutation ? await boundedBody(request) : undefined;
     if (body && new TextEncoder().encode(body).length > 32768) return NextResponse.json({ detail: "Request too large" }, { status: 413 });
     const upstream = await fetch(`${process.env.API_INTERNAL_URL ?? "http://127.0.0.1:8000"}/api/v1/${path[0]}`, {
       method: path[1], body: path[1] === "DELETE" ? undefined : body, cache: "no-store",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, signal: AbortSignal.timeout(15000)
     });
     return NextResponse.json(upstream.status === 204 ? {} : await upstream.json(), { status: upstream.status === 204 ? 200 : upstream.status, headers: { "Cache-Control": "no-store" } });
-  } catch { return NextResponse.json({ detail: "Service temporarily unavailable. Please retry." }, { status: 503 }); }
+  } catch (error) { return NextResponse.json({ detail: error instanceof BodyError ? error.message : "Service temporarily unavailable. Please retry." }, { status: error instanceof BodyError ? error.status : 503 }); }
 }
 export const GET = (request: NextRequest) => proxy(request, false);
 export const POST = (request: NextRequest) => proxy(request, true);

@@ -1,6 +1,9 @@
+import logging
 from contextlib import asynccontextmanager
+from uuid import uuid4
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -12,8 +15,9 @@ from app.audio_routes import router as audio_router
 from app.auth_routes import router as auth_router
 from app.config import get_settings
 from app.conversation_routes import router as conversation_router
-from app.db import engine
 from app.dashboard_routes import router as dashboard_router
+from app.db import engine
+from app.http_security import BodyLimitMiddleware, api_budget
 from app.longitudinal_routes import router as longitudinal_router
 from app.multimodal_routes import router as multimodal_router
 from app.privacy_routes import router as privacy_router
@@ -28,9 +32,11 @@ async def lifespan(app: FastAPI):
     engine.dispose()
 
 
-app = FastAPI(title="PamatiAI API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="PamatiAI API", version="0.1.0", lifespan=lifespan,
+              dependencies=[Depends(api_budget)])
 settings = get_settings()
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
+app.add_middleware(BodyLimitMiddleware)
 app.add_middleware(
     CORSMiddleware, allow_origins=settings.cors_origins,
     allow_credentials=False, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
@@ -50,10 +56,29 @@ app.include_router(dashboard_router)
 
 @app.middleware("http")
 async def private_response_headers(request, call_next):
-    response = await call_next(request)
+    request_id = uuid4().hex
+    try:
+        response = await call_next(request)
+    except Exception as exc:  # noqa: BLE001 -- redact the final HTTP/logging boundary
+        # Exception messages/tracebacks can contain SQL parameters or submitted text.
+        logging.getLogger("pamati.security").error("request_failed id=%s type=%s", request_id, type(exc).__name__)
+        response = JSONResponse({"detail": "Service temporarily unavailable"}, status_code=500)
     response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Request-ID"] = request_id
     response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    if settings.environment == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000"
     return response
+
+
+@app.exception_handler(RequestValidationError)
+async def invalid_request(request, exc):
+    # Pydantic's default response echoes rejected passwords, tokens and conversation text.
+    return JSONResponse({"detail": "Invalid request"}, status_code=422)
 
 
 class Health(BaseModel):

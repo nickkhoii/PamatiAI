@@ -34,7 +34,7 @@ def initialize_database():
     database = url.database
     if not database or not re.fullmatch(r"[A-Za-z0-9_]{1,64}", database):
         raise ValueError("Database name must contain only letters, digits and underscores")
-    admin_engine = create_engine(url.set(database=None))
+    admin_engine = create_engine(url.set(database=None), hide_parameters=True)
     try:
         with admin_engine.begin() as connection:
             connection.execute(
@@ -119,7 +119,7 @@ def main():
         initialize_database()
         print("Database initialized and migrations applied")
         return
-    engine = create_engine(get_settings().database_url)
+    engine = create_engine(get_settings().database_url, hide_parameters=True)
     try:
         with Session(engine) as session, session.begin():
             seed(

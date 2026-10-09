@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { boundedBody, BodyError } from "@/lib/bounded-body";
 
 export const dynamic = "force-dynamic";
 const origin = () => process.env.API_INTERNAL_URL ?? "http://127.0.0.1:8000";
@@ -74,10 +75,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ac
   if (Number(request.headers.get("content-length") ?? 0) > 32768) return NextResponse.json({ detail: "Request too large" }, { status: 413 });
   let body;
   try {
-    const raw = await request.text();
+    const raw = await boundedBody(request);
     if (new TextEncoder().encode(raw).length > 32768) return NextResponse.json({ detail: "Request too large" }, { status: 413 });
     body = raw ? JSON.parse(raw) : {};
-  } catch { return NextResponse.json({ detail: "Invalid request" }, { status: 400 }); }
+  } catch (error) { return NextResponse.json({ detail: error instanceof BodyError ? error.message : "Invalid request" }, { status: error instanceof BodyError ? error.status : 400 }); }
   if (action === "refresh" || action === "logout") body = { token: request.cookies.get(refreshCookie)?.value ?? "" };
   const token = request.cookies.get(accessCookie)?.value;
   if (action === "logout" && !request.cookies.get(refreshCookie)?.value) {

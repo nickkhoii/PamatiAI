@@ -373,9 +373,9 @@ def test_silence_and_invalid_upload_do_not_invent_emotions(api, monkeypatch, tmp
     valid = upload(api, data=wav_bytes(amplitude=0)).json()
     assert valid["result"]["emotion_probabilities"] is None
     assert valid["result"]["features"]["pitch_hz"]["mean"] is None
-    invalid = upload(api, data=b"not WAV").json()
-    assert invalid["status"] == "failed" and invalid["result"] is None
-    assert invalid["error_code"] == "adapter_failed"
+    invalid = upload(api, data=b"not WAV")
+    assert invalid.status_code == 422
+    assert invalid.json()["detail"] == "Invalid PCM WAV upload"
     assert list((tmp_path / "temporary").iterdir()) == []
 
 

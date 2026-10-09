@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -6,6 +7,7 @@ export const metadata: Metadata = {
   description: "A consent-first research platform for sentiment and affect tracking with human oversight."
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  await connection(); // Request-specific CSP nonces require dynamic rendering.
   return <html lang="en"><body><a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:bg-white focus:p-4">Skip to content</a>{children}</body></html>;
 }

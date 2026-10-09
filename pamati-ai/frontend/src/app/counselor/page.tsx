@@ -1,2 +1,2 @@
 import { RoleDashboard } from "@/components/role-dashboard";
-export default function Dashboard() { return <RoleDashboard role="COUNSELOR" />; }
+export default function Dashboard() { return <RoleDashboard dashboardRole="COUNSELOR" />; }

@@ -144,7 +144,8 @@ def records(student_id: str, category: Category, db: DB, user: CurrentUser, offs
         if category == "conversations":
             item.update(status=row.status, hidden=row.deleted_at is not None)
         elif category == "check_ins":
-            item.update(status=row.feeling, hidden=row.deleted_at is not None)
+            item.update(status="hidden" if row.deleted_at else "expired" if item["retention_until"] <= utcnow() else row.feeling,
+                        hidden=row.deleted_at is not None)
         elif category == "analysis":
             item.update(modality=row.modality, status=row.processing_status)
         elif category == "research":

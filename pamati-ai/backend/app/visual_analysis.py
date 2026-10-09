@@ -18,6 +18,7 @@ from app.models import (
 )
 from app.persistence import ConsentDenied, create_inference, current_consent
 from app.processing import run_analysis
+from app.retention import retained
 
 
 def configured_adapters():
@@ -64,7 +65,7 @@ def authorize_visual(db, session_id, student_id):
         raise ConsentDenied("An active student-owned interaction session is required")
     conversation = db.scalar(select(Conversation).where(Conversation.id == interaction.conversation_id)
                              .with_for_update().execution_options(populate_existing=True))
-    if not conversation or conversation.deleted_at or conversation.status != "open":
+    if not retained(db, conversation, "conversations") or conversation.status != "open":
         raise ConsentDenied("Conversation is unavailable")
     return receipt
 

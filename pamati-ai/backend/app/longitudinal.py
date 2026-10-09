@@ -29,6 +29,7 @@ from app.models import (
     VisualAnalysis,
 )
 from app.persistence import ConsentDenied, create_trend, require_purpose
+from app.retention import retained
 
 ANALYSES = {"text": TextAnalysis, "audio": AudioAnalysis, "visual": VisualAnalysis, "multimodal": MultimodalAnalysis}
 
@@ -61,7 +62,7 @@ def source_available(db, row, receipt):
                     .with_for_update().execution_options(populate_existing=True))
     if not row or row.student_id != receipt.student_id:
         return False
-    if row.deleted_at or row.processing_status != "completed":
+    if not retained(db, row, "analysis") or row.processing_status != "completed":
         return False
     inputs = row.input_modalities or ([row.modality] if row.modality != "multimodal" else [])
     if not inputs or any(m not in {"text", "audio", "visual"} or not getattr(receipt, m + "_processing") for m in inputs):
@@ -75,7 +76,7 @@ def source_available(db, row, receipt):
         return False
     conversation = db.scalar(select(Conversation).where(Conversation.id == interaction.conversation_id)
                              .with_for_update().execution_options(populate_existing=True))
-    if not conversation or conversation.deleted_at:
+    if not retained(db, conversation, "conversations"):
         return False
     if row.message_id:
         message = db.scalar(select(Message).where(Message.id == row.message_id)
@@ -205,6 +206,11 @@ def rebuild(db, student_id, start, end):
         if not any(start <= record.timestamp < end for record in records):
             continue
         summary = algorithm.summarize(tuple(records), start, end, options, sessions=sessions)
+        # Validate before creating lineage too: a changed source must not reach a
+        # MySQL evidence trigger while pending edges from another dimension flush.
+        for source in source_rows.values():
+            if not source_available(db, source, receipt):
+                raise ConsentDenied("Tracking source became unavailable")
         if (summary.get("schema_version") != "longitudinal-observation-v1"
                 or set(summary.get("source_observation_ids", [])) != {record.id for record in records}):
             raise ValueError("Tracking algorithm must preserve normalized evidence lineage")
@@ -219,6 +225,7 @@ def rebuild(db, student_id, start, end):
                              algorithm_version=f"{algorithm.version}:{fingerprint}", sample_count=len(records), summary=summary)
         for record in records:
             db.add(TrendObservation(trend_id=trend.id, observation_id=record.id, student_id=student_id))
+        db.flush()
         created.append(trend.id)
     # Locks held by current_consent serialize consent/deletion changes with publication.
     latest = authorize_tracking(db, student_id, processing=True)
@@ -241,6 +248,8 @@ def summaries(db, student_id):
                           .order_by(SentimentTrend.created_at.desc(), SentimentTrend.id.desc()).limit(512)))
     result, seen = [], set()
     for row in rows:
+        if not retained(db, row, "analysis"):
+            continue
         summary = row.summary
         if summary.get("schema_version") != "longitudinal-observation-v1":
             continue

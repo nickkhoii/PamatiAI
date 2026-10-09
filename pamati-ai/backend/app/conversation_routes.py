@@ -12,6 +12,7 @@ from app.auth_routes import Input
 from app.consent_policy import POLICY_VERSION, policy_document
 from app.models import Conversation, InteractionSession, Message, utcnow
 from app.persistence import ConsentDenied, current_consent
+from app.retention import retained
 from app.safety import record_signals, screen
 from app.text_analysis import enqueue, execute, results
 from services.conversation.prompt import PROMPT_VERSION
@@ -49,7 +50,7 @@ def send_message(
     conversation_id: str, body: TurnInput, request: Request, db: DB, user: CurrentUser
 ):
     conversation = db.get(Conversation, conversation_id)
-    if not conversation or conversation.deleted_at:
+    if not retained(db, conversation, "conversations"):
         raise HTTPException(404, "Conversation not found")
     authorize_student(db, user, "conversation:manage", conversation.student_id)
     throttle(db, request, "conversation.turn", user.id, ip_limit=120, subject_limit=60)
@@ -226,7 +227,7 @@ def send_message(
         db.commit()
         raise HTTPException(409, "Conversation records are no longer available")
     allowed = (
-        allowed
+        retained(db, conversation, "conversations") and allowed
         and not conversation.deleted_at
         and conversation.status == "open"
         and not assistant.deleted_at
@@ -264,7 +265,7 @@ def send_message(
 @router.get("/conversations/{conversation_id}/messages/{message_id}/analyses")
 def message_analyses(conversation_id: str, message_id: str, db: DB, user: CurrentUser):
     conversation = db.get(Conversation, conversation_id)
-    if not conversation or conversation.deleted_at:
+    if not retained(db, conversation, "conversations"):
         raise HTTPException(404, "Conversation not found")
     authorize_student(db, user, "history:read", conversation.student_id)
     message = db.get(Message, message_id)

@@ -30,7 +30,7 @@ from app.models import (
     utcnow,
 )
 from app.persistence import ConsentDenied, current_consent, record_consent, withdraw_consent
-from app.retention import RetentionPolicy, retention_policy
+from app.retention import RetentionPolicy, retained, retention_policy
 
 router = APIRouter(prefix="/api/v1", tags=["protected resources"])
 ConfigurationManager = Annotated[User, Depends(require_permission("configuration:manage"))]
@@ -74,7 +74,7 @@ class ReferralState(Input):
 class AssignmentInput(Input):
     student_id: str = Field(max_length=36)
     counselor_id: str = Field(max_length=36)
-    revoked: bool = False
+    revoked: StrictBool = False
 
 
 class SettingInput(Input):
@@ -107,7 +107,7 @@ def conversations(student_id: str, db: DB, user: CurrentUser):
         .order_by(Conversation.created_at.desc())
         .limit(100)
     )
-    result = [{"id": c.id, "status": c.status, "created_at": c.created_at} for c in rows]
+    result = [{"id": c.id, "status": c.status, "created_at": c.created_at} for c in rows if retained(db, c, "conversations")]
     audit(db, user.id, "conversation.list", "student", student_id)
     db.commit()
     return result
@@ -134,7 +134,7 @@ def create_conversation(student_id: str, db: DB, user: CurrentUser):
 def conversation(conversation_id: str, db: DB, user: CurrentUser,
                  offset: int = Query(default=0, ge=0, le=100000), limit: int = Query(default=100, ge=1, le=500)):
     row = db.get(Conversation, conversation_id)
-    if not row or row.deleted_at:
+    if not retained(db, row, "conversations"):
         raise HTTPException(404, "Conversation not found")
     authorize_student(db, user, "history:read", row.student_id)
     messages = list(db.scalars(
@@ -165,7 +165,7 @@ def conversation(conversation_id: str, db: DB, user: CurrentUser,
 @router.delete("/conversations/{conversation_id}", status_code=204)
 def delete_conversation(conversation_id: str, db: DB, user: CurrentUser):
     row = db.get(Conversation, conversation_id)
-    if not row or row.deleted_at:
+    if not retained(db, row, "conversations"):
         raise HTTPException(404, "Conversation not found")
     authorize_student(db, user, "conversation:manage", row.student_id)
     row.deleted_at = utcnow()
@@ -273,6 +273,11 @@ def trends(student_id: str, db: DB, user: CurrentUser):
         }
         for t in rows
         if t.summary.get("schema_version") != "longitudinal-observation-v1"
+        and retained(db, t, "analysis")
+        and all(not o.deleted_at and retained(db, o.inference, "analysis")
+                for o in db.scalars(select(SentimentObservation).join(TrendObservation,
+                                   TrendObservation.observation_id == SentimentObservation.id)
+                                   .where(TrendObservation.trend_id == t.id)))
     ]
     audit(db, user.id, "trend.read", "student", student_id)
     db.commit()

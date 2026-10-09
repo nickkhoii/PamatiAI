@@ -65,6 +65,19 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
     const forgedDashboard = await fetch(origin + "/api/auth/dashboard?op=check-in", { method: "POST", headers: { Origin: "https://attacker.example", Cookie: cookieHeader }, body: "{}" });
     assert.equal(forgedDashboard.status, 403);
     assert.equal(calls.length, beforeForgedDashboard);
+    const beforeOversize = calls.length;
+    for (const path of ["/api/auth/login", "/api/auth/dashboard?op=check-in"]) {
+      const stream = new ReadableStream({ start(controller) {
+        controller.enqueue(new TextEncoder().encode(" ".repeat(20000)));
+        controller.enqueue(new TextEncoder().encode(" ".repeat(20000)));
+        controller.close();
+      } });
+      const oversized = await fetch(origin + path, { method: "POST", duplex: "half",
+        headers: { Origin: origin, Cookie: cookieHeader, "Content-Type": "application/json" }, body: stream });
+      assert.equal(oversized.status, 413);
+      assert.equal(oversized.headers.get("cache-control"), "no-store");
+    }
+    assert.equal(calls.length, beforeOversize);
     const checkin = await fetch(origin + "/api/auth/dashboard?op=check-in", { method: "POST", headers: { Origin: origin, Cookie: cookieHeader, "Content-Type": "application/json" }, body: JSON.stringify({ feeling: "mixed" }) });
     assert.equal(checkin.status, 200);
     assert.equal(calls.at(-1).path, "/api/v1/dashboard/check-ins");
@@ -72,7 +85,16 @@ test("browser gateway checks Origin, protects tokens, and revokes expired-access
     for (const route of ["student", "counselor", "admin"]) {
       const page = await fetch(origin + "/" + route);
       assert.equal(page.status, 200);
-      assert.match(await page.text(), /aria-label="Dashboard sections"/);
+      const html = await page.text();
+      assert.match(html, /aria-label="Dashboard sections"/);
+      const policy = page.headers.get("content-security-policy");
+      assert.match(policy, /frame-ancestors 'none'/);
+      assert.match(policy, /script-src .*'strict-dynamic'/);
+      assert.doesNotMatch(policy, /script-src[^;]*'unsafe-inline'/);
+      const nonce = policy.match(/'nonce-([^']+)'/)[1];
+      for (const script of html.matchAll(/<script\b[^>]*>/g)) assert.ok(script[0].includes(`nonce="${nonce}"`));
+      const second = await fetch(origin + "/" + route);
+      assert.notEqual(second.headers.get("content-security-policy"), policy);
     }
     const records = await fetch(origin + "/api/auth/records?category=research&student_id=bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", { headers: { Cookie: cookieHeader } });
     assert.equal(records.status, 200);

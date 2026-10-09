@@ -19,7 +19,7 @@ from app.models import (
     TrendObservation,
     utcnow,
 )
-from app.persistence import ConsentDenied, create_inference, record_consent, withdraw_consent
+from app.persistence import ConsentDenied, current_consent, record_consent, withdraw_consent
 from app.processing import run_analysis
 
 api = shared_api
@@ -51,9 +51,12 @@ def source(api, day, score=.3, version="1", preprocessing="1"):
                                       created_at=day.replace(tzinfo=None))
     db.add(interaction)
     db.flush()
-    row = create_inference(db, student_id=student, session_id=interaction.id, model_version_id=model.id,
-                           preprocessing_version=preprocessing, adapter_version="1")
-    row.created_at = (day + timedelta(hours=1)).replace(tzinfo=None)
+    # Historical synthetic provenance must be supplied at INSERT, never rewritten.
+    row = ModelInference(student_id=student, session_id=interaction.id, model_version_id=model.id,
+                         consent_record_id=current_consent(db, student).id, modality="text",
+                         input_modalities=["text"], preprocessing_version=preprocessing, adapter_version="1",
+                         created_at=(day + timedelta(hours=1)).replace(tzinfo=None))
+    db.add(row)
     db.flush()
     adapter = Mock()
     adapter.analyze.return_value = SimpleNamespace(

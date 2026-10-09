@@ -24,7 +24,10 @@ class RetentionPolicy(BaseModel):
 
 
 def retention_policy(db, *, lock=False):
-    setting = db.get(SystemSetting, "data_retention", with_for_update=lock, populate_existing=lock)
+    # Shared locking reads are current under MySQL repeatable-read and avoid
+    # extending availability using a cached, superseded retention policy.
+    setting = db.get(SystemSetting, "data_retention",
+                     with_for_update=True if lock else {"read": True}, populate_existing=True)
     return RetentionPolicy.model_validate(setting.value) if setting else RetentionPolicy()
 
 
@@ -36,7 +39,8 @@ def active_holds(db, student_id, category=None):
     )
     if category:
         query = query.where(RetentionHold.category == category)
-    return list(db.scalars(query.order_by(RetentionHold.expires_at)))
+    return list(db.scalars(query.order_by(RetentionHold.expires_at).with_for_update(read=True)
+                           .execution_options(populate_existing=True)))
 
 
 def deadline(db, student_id, category: Category, created_at: datetime, *, snapshot=None):
@@ -67,3 +71,26 @@ def hold_view(row):
         "created_at": row.created_at,
         "released_at": row.released_at,
     }
+
+
+def retained(db, row, category: Category):
+    """An expired record is unavailable even before a storage-erasure worker runs."""
+    if row is None or getattr(row, "deleted_at", None):
+        return False
+    snapshot = getattr(row, "retention_snapshot", None)
+    if category in {"analysis", "research"}:
+        from app.models import ConsentRecord
+
+        receipt = db.get(ConsentRecord, row.consent_record_id)
+        snapshot = (receipt.disclosure_snapshot or {}).get("retention") if receipt else None
+    if category == "analysis" and hasattr(row, "session_id"):
+        from app.models import InteractionSession, Message
+
+        interaction = db.get(InteractionSession, row.session_id, populate_existing=True)
+        if not interaction or interaction.deleted_at or not retained(db, interaction.conversation, "conversations"):
+            return False
+        if row.message_id:
+            message = db.get(Message, row.message_id, populate_existing=True)
+            if not message or message.deleted_at:
+                return False
+    return deadline(db, row.student_id, category, row.created_at, snapshot=snapshot) > utcnow()

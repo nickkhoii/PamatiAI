@@ -34,7 +34,7 @@ function cell(key: string, value: unknown) {
   return ["status", "workflow_state", "feeling", "decision", "reason_category", "human_review_status"].includes(key) ? readable(String(value)) : String(value);
 }
 
-export function RoleDashboard({ role }: { role: Role }) {
+export function RoleDashboard({ dashboardRole: role }: { dashboardRole: Role }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [tab, setTab] = useState(tabs[role][0][0]);
   const [q, setQ] = useState(""); const [status, setStatus] = useState("");

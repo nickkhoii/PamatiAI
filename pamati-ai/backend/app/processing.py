@@ -19,6 +19,7 @@ from app.models import (
     utcnow,
 )
 from app.persistence import ConsentDenied, current_consent
+from app.retention import retained
 
 
 @dataclass(frozen=True)
@@ -40,10 +41,10 @@ def permitted_job(db, row):
     if inputs is None and row.modality != "multimodal":
         inputs = [row.modality]  # Legacy single-modality jobs are still explicit.
     if (
-        row.deleted_at
+        not retained(db, row, "analysis")
         or not interaction
         or interaction.deleted_at
-        or interaction.conversation.deleted_at
+        or not retained(db, interaction.conversation, "conversations")
         or receipt.id != row.consent_record_id
         or not inputs
         or len(inputs) != len(set(inputs))

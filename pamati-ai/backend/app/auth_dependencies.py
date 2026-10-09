@@ -21,7 +21,6 @@ from app.models import (
     ConsentRecord,
     ReviewerAssignment,
     ReviewerProfile,
-    StudentProfile,
     User,
     identifier,
     utcnow,
@@ -182,8 +181,11 @@ def require_permission(permission: str):
 
 
 def authorize_student(db, user, permission, student_id):
-    student = db.get(StudentProfile, student_id)
-    if not student or student.deleted_at or not student.user.is_active or student.user.deleted_at:
+    from app.persistence import ConsentDenied, lock_student
+
+    try:
+        lock_student(db, student_id)
+    except ConsentDenied:
         deny(db, user.id, "authorization.resource", resource_id=student_id)
     assigned = (
         db.scalar(
@@ -192,16 +194,19 @@ def authorize_student(db, user, permission, student_id):
                 ReviewerAssignment.reviewer_id == user.id,
                 ReviewerAssignment.revoked_at.is_(None),
             )
+            .with_for_update()
         )
         is not None
     )
-    reviewer = db.get(ReviewerProfile, user.id)
+    reviewer = db.get(ReviewerProfile, user.id, populate_existing=True)
     assigned = assigned and reviewer is not None and reviewer.deleted_at is None
     consent = db.scalar(
         select(ConsentRecord)
         .where(ConsentRecord.student_id == student_id)
         .order_by(ConsentRecord.version.desc())
         .limit(1)
+        .with_for_update()
+        .execution_options(populate_existing=True)
     )
     active = bool(consent and not consent.withdrawn_at and consent.reviewer_access)
     for role in user.roles:

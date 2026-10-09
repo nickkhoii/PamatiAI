@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 from cryptography.fernet import Fernet
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_validator
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
@@ -48,7 +48,7 @@ GENERIC = {"message": "If eligible, instructions will be sent to the registered 
 
 
 class Input(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
 
 
 class EmailInput(Input):
@@ -95,7 +95,7 @@ class InvitationInput(EmailInput):
 
 
 class AccountState(Input):
-    is_active: bool
+    is_active: StrictBool
 
 
 def public_profile(user):
@@ -428,6 +428,11 @@ def account_role(user_id: str, body: RoleInput, db: DB, admin: Admin, manager: A
     role = db.scalar(select(Role).where(Role.code == body.role))
     if not role:
         raise HTTPException(503, "Institutional roles have not been provisioned")
+    if body.role != "COUNSELOR":
+        from app.models import ReviewerAssignment
+
+        db.execute(update(ReviewerAssignment).where(ReviewerAssignment.reviewer_id == user.id)
+                   .values(revoked_at=utcnow()))
     user.roles = [role]
     if body.role == "STUDENT" and not user.student_profile:
         db.add(StudentProfile(user_id=user.id))

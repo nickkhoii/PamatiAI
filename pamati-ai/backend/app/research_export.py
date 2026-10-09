@@ -35,6 +35,7 @@ from app.models import (
     VisualAnalysis,
 )
 from app.persistence import ConsentDenied, require_purpose
+from app.retention import retained
 
 
 class ExportDenied(ValueError):
@@ -56,7 +57,7 @@ def live_source(db, row, receipt, seen=None):
     db.refresh(row, with_for_update=True)
     if (
         row.student_id != receipt.student_id
-        or row.deleted_at
+        or not retained(db, row, "analysis")
         or row.processing_status != "completed"
     ):
         return False
@@ -94,7 +95,7 @@ def live_source(db, row, receipt, seen=None):
         or session.deleted_at
         or session.student_id != row.student_id
         or not conversation
-        or conversation.deleted_at
+        or not retained(db, conversation, "conversations")
     ):
         return False
     if row.message_id:
@@ -216,7 +217,7 @@ def build_research_export(db, dataset, secret, *, minimum_group_size=5):
             excluded["current_research_consent_unavailable"] += 1
             continue
         db.refresh(record, with_for_update=True)
-        if record.deleted_at or record.revoked_at:
+        if not retained(db, record, "research") or record.revoked_at:
             excluded["revoked_membership"] += 1
             continue
         if not record.ethics_approval_reference or not record.deidentification_version:

@@ -101,7 +101,7 @@ python -m venv .venv
 .venv/Scripts/python.exe -m pip install -r backend/requirements.lock
 cd backend
 $env:PYTHONPATH = (Resolve-Path ..).Path
-../.venv/Scripts/python.exe -m uvicorn app.main:app --reload --port 8000
+../.venv/Scripts/python.exe -m uvicorn app.main:app --reload --port 8000 --no-access-log
 ```
 
 In a separate terminal:
@@ -135,3 +135,5 @@ Architecture and implementation boundaries: [ARCHITECTURE](docs/ARCHITECTURE.md)
 Authentication and role-based access: see [deployment and API instructions](docs/AUTHENTICATION.md). Start browser account flows at `/auth/login`.
 
 Student onboarding and informed consent are available at `/student/onboarding`; privacy controls and personal records are at `/student/privacy` and `/student/records`. See [privacy](docs/PRIVACY.md) and [consent model](docs/CONSENT_MODEL.md) for consent gates, retention policies and fulfillment boundaries.
+
+The [security audit](docs/SECURITY_AUDIT.md) records verified defenses, abuse tests and residual risks. [Ethical safeguards](docs/ETHICAL_SAFEGUARDS.md) explains participant agency, human oversight and research limits. Run `scripts/check.ps1` for backend tests, lint, migration SQL, frontend lint, strict TypeScript, production build and the production gateway tests. Production requires TLS and explicit approved hosts/origins; the development Compose configuration is not a production launch setup.

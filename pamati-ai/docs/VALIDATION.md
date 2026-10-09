@@ -1,5 +1,15 @@
 # Foundation and database validation
 
+## Security audit validation — 2026-10-09
+
+The final backend run passed **619 tests across SQLite and isolated MySQL 8.4.4**, with one intentional SQLite skip for MySQL-only evidence triggers. The schema is at `0009_dashboards`; offline migration SQL and live schema-drift checks passed. The isolated loopback test server was shut down afterward. No participant database or deployment secrets were changed.
+
+The frontend's two Node tests passed with `RUN_AUTH_GATEWAY_TESTS=1`, including the running production gateway's Origin/cookie handling, chunked limits and matching per-request CSP nonces. Ruff, frontend ESLint, strict TypeScript, Python compilation, Next.js production build and the backend wheel build passed. Final npm audit returned zero vulnerabilities; pip-audit against the backend lock reported no known vulnerabilities. Platform-specific dependencies and deployment images require separate CI scans.
+
+See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) for fixed findings, abuse coverage and precise limits, and [ETHICAL_SAFEGUARDS.md](ETHICAL_SAFEGUARDS.md) for participant and research safeguards. These local checks do not validate a live institutional deployment, real models, physical erasure, SMTP, Docker images or browser/assistive-technology behavior.
+
+## Earlier foundation validation
+
 Validated on 2026-10-02 on Windows with Node.js 24.19.0, workspace-local Python 3.12.14 and an isolated MySQL 8.4.4 runtime. MySQL binds only to 127.0.0.1:3307; its files and generated credentials are in the ignored workspace `.runtime/mysql` directory. No Windows service was installed. The test server is stopped after validation.
 
 | Check | Result |

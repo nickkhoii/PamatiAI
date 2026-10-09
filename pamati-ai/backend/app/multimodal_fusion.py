@@ -24,6 +24,7 @@ from app.models import (
 )
 from app.persistence import ConsentDenied, create_inference, current_consent
 from app.processing import run_analysis
+from app.retention import retained
 
 
 def configured():
@@ -60,7 +61,7 @@ def authorize_fusion(db, session_id, student_id):
         raise ConsentDenied("An active student-owned session is required")
     conversation = db.scalar(select(Conversation).where(Conversation.id == interaction.conversation_id)
                              .with_for_update().execution_options(populate_existing=True))
-    if not conversation or conversation.deleted_at or conversation.status != "open":
+    if not retained(db, conversation, "conversations") or conversation.status != "open":
         raise ConsentDenied("Conversation is unavailable")
     return receipt
 
@@ -82,7 +83,7 @@ def load_sources(db, session_id, student_id, ids, receipt):
         if not getattr(receipt, f"{modality}_processing"):
             excluded[modality] = "unconsented"
             continue  # Do not read unconsented analysis content.
-        if row.deleted_at or row.processing_status != "completed":
+        if not retained(db, row, "analysis") or row.processing_status != "completed":
             excluded[modality] = "deleted" if row.deleted_at else row.processing_status
             continue
         if row.message_id:

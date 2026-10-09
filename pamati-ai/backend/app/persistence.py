@@ -18,7 +18,7 @@ from app.models import (
     User,
     utcnow,
 )
-from app.retention import retention_policy
+from app.retention import retained, retention_policy
 
 CONSENT_FIELDS = {
     "text_processing",
@@ -197,6 +197,8 @@ def create_inference(
     model = session.get(ModelVersion, model_version_id)
     if interaction is None or interaction.student_id != student_id or interaction.deleted_at:
         raise ValueError("Interaction session does not belong to active student")
+    if not retained(session, interaction.conversation, "conversations"):
+        raise ConsentDenied("Conversation is unavailable")
     if model is None:
         raise ValueError("Unknown model version")
     allowed = [
