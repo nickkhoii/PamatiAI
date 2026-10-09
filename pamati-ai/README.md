@@ -6,6 +6,15 @@ Production-oriented research prototype foundation for higher-education student s
 
 ## What works now
 
+Offline empirical evaluation in `ai/evaluation/` supports single-label/multilabel
+metrics, explicitly applicable probability/calibration metrics, seven modality
+variants, paired cohorts and seeded group-bootstrap uncertainty, measured system
+observations, and reproducible aggregate experiment artifacts. The separate
+consent-aware research worker exports pseudonymous derived observations without
+raw inputs or identities. No real labeled evaluation dataset is bundled and no
+model-performance results are claimed. See [EVALUATION](docs/EVALUATION.md) and
+[RESEARCH_PROTOCOL](docs/RESEARCH_PROTOCOL.md).
+
 Role dashboards are available at `/student`, `/counselor` (also `/reviewer`), and
 `/admin`. Apply migration `0009_dashboards` with `alembic upgrade head` from
 `backend` before starting an existing installation. All lists and totals come

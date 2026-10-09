@@ -1,0 +1,30 @@
+{
+  "experiment_id": "awaiting-approved-labeled-dataset",
+  "dataset": {
+    "identifier": "not-provided",
+    "version": "not-provided",
+    "target": "sentiment",
+    "task": "single_label",
+    "labels": ["negative", "neutral", "positive", "mixed"],
+    "annotation_version": "not-provided",
+    "label_mapping_version": "not-provided",
+    "source_reference": "not-provided",
+    "license_reference": "not-provided",
+    "population_scope": "public_benchmark",
+    "evidence_kind": "unlabeled",
+    "split_unit": "participant"
+  },
+  "variants": ["text_only", "audio_only", "visual_only", "text_audio", "text_visual", "audio_visual", "all_available"],
+  "model_versions": {},
+  "seed": 0,
+  "split": "test",
+  "cohort_policy": "paired_complete",
+  "minimum_confidence": 0.0,
+  "decision_threshold": 0.5,
+  "calibration_bins": 10,
+  "bootstrap_repetitions": 0,
+  "fusion_weights": {},
+  "dataset_path": null,
+  "predictions_path": null,
+  "system_path": null
+}

@@ -1,3 +1,7 @@
 .runtime/
 .uv-cache/
 .npm-cache/
+
+# Restricted research inputs, keys, observations and generated reports
+private-research/
+research-reports/
