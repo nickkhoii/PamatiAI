@@ -135,6 +135,20 @@ button { touch-action: manipulation; }
 .auth-signin nav a:hover { text-decoration: underline; }
 .auth-footnote { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line); font-size: .78rem; line-height: 1.6; color: var(--muted); }
 .auth-password-field { position: relative; }
+.profile-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.profile-heading .pamati-mascot { margin: 0; }
+.profile-description { color: var(--muted); margin-bottom: 1.5rem; line-height: 1.6; }
+.profile-identity { display: flex; align-items: center; gap: 1rem; padding: 1.25rem; background: #f5f3ff; border: 1px solid var(--line); border-radius: 16px; }
+.profile-avatar { display: grid; place-items: center; width: 52px; height: 52px; flex-shrink: 0; border-radius: 50%; background: #dfd7ff; color: #5637b0; font-size: 1.4rem; font-weight: 700; }
+.profile-identity h2 { font-size: 1.2rem; font-weight: 650; }
+.profile-identity p { font-size: .9rem; color: var(--muted); }
+.profile-roles { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+.profile-roles span { border: 1px solid #d5cbfa; border-radius: 999px; padding: .15rem .6rem; font-size: .75rem; text-transform: capitalize; color: #5637b0; }
+.profile-destinations { display: flex; flex-wrap: wrap; gap: .7rem; }
+.profile-controls { border-top: 1px solid var(--line); padding-top: 1.25rem; }
+.profile-controls h2 { font-weight: 650; margin-bottom: 1rem; }
+.profile-controls button, .profile-controls a { border: 1px solid var(--line); padding: .65rem .85rem; border-radius: 10px; font-size: .85rem; color: #5637b0; background: white; min-height: 44px; }
+.profile-controls button:hover, .profile-controls a:hover { background: #f5f3ff; }
 .auth-password-field input { padding-right: 4.5rem; }
 .password-toggle { position: absolute; right: .5rem; top: .25rem; min-height: 44px; padding: .5rem; font-size: .8rem; color: #5c3ab7; cursor: pointer; background: transparent; }
 @media(max-width:650px) {

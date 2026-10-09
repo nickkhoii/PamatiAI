@@ -27,6 +27,9 @@ export function AuthForm({ action }: { action: string }) {
       const response = await fetch(`/api/auth/${endpoint}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const result = await response.json();
       if (response.ok && action === "login") window.location.assign("/auth/profile");
+      else if (response.ok && action === "profile") {
+        setProfile(result); setMessage("Your profile changes were saved.");
+      }
       else setMessage(response.ok ? result.message ?? "Saved. You can sign in now." : typeof result.detail === "string" ? result.detail : "Check the fields and try again.");
     } catch { setMessage("Service temporarily unavailable"); }
     finally { setBusy(false); }
@@ -43,17 +46,19 @@ export function AuthForm({ action }: { action: string }) {
   const registration = action === "register" || action === "invite";
   const newPassword = registration || action === "reset" || action === "change-password";
   return <div className="space-y-5">
-    {profile && <p>{profile.email} ? {profile.roles.join(", ")}</p>}
+    {action === "profile" && !profile && <p role="status">{message || "Loading your account..."}</p>}
+    {profile && <section className="profile-identity"><div className="profile-avatar" aria-hidden="true">{profile.display_name.slice(0, 1).toUpperCase()}</div><div><h2>{profile.display_name}</h2><p>{profile.email}</p><div className="profile-roles">{profile.roles.map(role => <span key={role}>{role.toLowerCase()}</span>)}</div></div></section>}
+    {profile && <section className="profile-destinations" aria-label="Your workspaces">{[["STUDENT", "/student", "Student dashboard"], ["COUNSELOR", "/counselor", "Counselor dashboard"], ["ADMIN", "/admin", "Admin dashboard"]].filter(([role]) => profile.roles.includes(role)).map(([role, href, label]) => <a className="primary-link" key={role} href={href}>Continue to {label.toLowerCase()}</a>)}</section>}
     {["activate", "reset", "invite"].includes(action) && !token && <p>Open the complete link from your institutional email to continue.</p>}
-    <form onSubmit={submit} className="space-y-4" aria-busy={busy}>
+    <form onSubmit={submit} className="space-y-4" aria-busy={busy} hidden={action === "profile" && !profile}>
       {(registration || action === "login" || action === "forgot-password") && <label className="block">Institutional email<input name="email" type="email" autoComplete="email" required maxLength={254} className="mt-1 block w-full rounded border p-3" /></label>}
-      {(registration || action === "profile") && <label className="block">Display name<input name="display_name" defaultValue={profile?.display_name} required maxLength={120} className="mt-1 block w-full rounded border p-3" /></label>}
+      {(registration || action === "profile") && <label className="block">Display name<input name="display_name" key={profile?.display_name ?? "register"} defaultValue={profile?.display_name} required maxLength={120} className="mt-1 block w-full rounded border p-3" /></label>}
       {action === "change-password" && <label className="block">Current password<input name="current_password" type="password" autoComplete="current-password" required maxLength={128} className="mt-1 block w-full rounded border p-3" /></label>}
       {(newPassword || action === "login") && <div><label className="block" htmlFor="auth-password">{newPassword ? "New password (at least 15 characters)" : "Password"}</label><div className="auth-password-field"><input id="auth-password" name={action === "change-password" ? "new_password" : "password"} type={showPassword ? "text" : "password"} autoComplete={newPassword ? "new-password" : "current-password"} required minLength={newPassword ? 15 : 1} maxLength={128} className="mt-1 block w-full rounded border p-3" /><button type="button" className="password-toggle" aria-pressed={showPassword} aria-controls="auth-password" onClick={() => setShowPassword(v => !v)}>{showPassword ? "Hide" : "Show"}<span className="sr-only"> password</span></button></div></div>}
-      <button disabled={busy || (["activate", "reset", "invite"].includes(action) && !token)} className="auth-submit rounded bg-teal-800 px-5 py-3 text-white disabled:opacity-50">{busy ? "Please wait..." : action === "activate" ? "Activate" : "Continue"}</button>
+      <button disabled={busy || (["activate", "reset", "invite"].includes(action) && !token)} className="auth-submit rounded bg-teal-800 px-5 py-3 text-white disabled:opacity-50">{busy ? "Please wait..." : action === "profile" ? "Save changes" : action === "activate" ? "Activate" : "Continue"}</button>
     </form>
     <p role="status" aria-live="polite">{message}</p>
-    {action === "profile" && <div className="flex flex-wrap gap-4"><button disabled={busy} onClick={() => sessionAction("refresh")}>Renew session</button><button disabled={busy} onClick={() => sessionAction("logout")}>Sign out</button><button disabled={busy} onClick={() => sessionAction("logout-all")}>Sign out everywhere</button><a href="/auth/change-password">Change password</a>{profile?.roles.includes("STUDENT") && <a href="/student">Student dashboard</a>}{profile?.roles.includes("COUNSELOR") && <a href="/counselor">Counselor dashboard</a>}{profile?.roles.includes("ADMIN") && <a href="/admin">Admin dashboard</a>}{profile?.roles.includes("STUDENT") && <><a href="/student/chat">Open chat</a><a href="/student/onboarding">Onboarding and consent</a><a href="/student/privacy">Privacy and records</a></>}</div>}
-    <nav className="flex gap-4 text-teal-700"><a href="/auth/login">Sign in</a><a href="/auth/register">Register</a><a href="/auth/forgot-password">Forgot password</a></nav>
+    {action === "profile" && profile && <section className="profile-controls"><h2>Account and privacy</h2><div className="flex flex-wrap gap-4"><button disabled={busy} onClick={() => sessionAction("refresh")}>Renew session</button><button disabled={busy} onClick={() => sessionAction("logout")}>Sign out</button><button disabled={busy} onClick={() => sessionAction("logout-all")}>Sign out everywhere</button><a href="/auth/change-password">Change password</a>{profile?.roles.includes("STUDENT") && <a href="/student">Student dashboard</a>}{profile?.roles.includes("COUNSELOR") && <a href="/counselor">Counselor dashboard</a>}{profile?.roles.includes("ADMIN") && <a href="/admin">Admin dashboard</a>}{profile?.roles.includes("STUDENT") && <><a href="/student/chat">Open chat</a><a href="/student/onboarding">Onboarding and consent</a><a href="/student/privacy">Privacy and records</a></>}</div></section>}
+    {action !== "profile" && <nav className="flex gap-4 text-teal-700"><a href="/auth/login">Sign in</a><a href="/auth/register">Register</a><a href="/auth/forgot-password">Forgot password</a></nav>}
   </div>;
 }
